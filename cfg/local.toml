@@ -1,0 +1,8 @@
+[Data Base]
+Name = "newsportal"
+Password = "postgres"
+User = "postgres"
+Type = "postgres"
+Host = "localhost"
+Port = 5434
+genna model -c postgres://postgres:postgres@localhost:5432/newsportal?sslmode=disable -o ~/pkg/db/model2.go -t public.* -f
