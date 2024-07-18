@@ -16,7 +16,7 @@ func ptrs(r string) *string { return &r }
 var dbc *pg.DB
 var nr db.NewsRepo
 var nm *Manager
-var realNews News
+var realNews NewsSummary
 
 func TestMain(m *testing.M) {
 	opts := &pg.Options{
@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	nr = db.NewNewsRepo(dbc)
 	nm = NewManager(nr)
 
-	realNews = News{
+	realNews = NewsSummary{
 		ID:          11,
 		Title:       "Новость1",
 		CategoryID:  1,

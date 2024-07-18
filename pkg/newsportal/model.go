@@ -2,7 +2,7 @@ package newsportal
 
 import "time"
 
-type News struct {
+type NewsSummary struct {
 	ID          int       `json:"newsId"`
 	Title       string    `json:"title"`
 	CategoryID  int       `json:"categoryId"`
@@ -12,4 +12,18 @@ type News struct {
 	Author      string    `json:"author"`
 	PublishedAt time.Time `json:"publishedAt"`
 	StatusID    int       `json:"statusId"`
+}
+
+type Category struct {
+	ID          int    `json:"categoryId"`
+	Title       string `json:"title"`
+	OrderNumber *int   `json:"orderNumber"`
+	Alias       string `json:"alias"`
+	StatusID    int    `json:"statusId"`
+}
+
+type Tag struct {
+	ID       int    `json:"tagId"`
+	Title    string `json:"title"`
+	StatusID int    `json:"statusId"`
 }

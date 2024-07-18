@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestGetNewsByID(t *testing.T) {
+func TestNewsByID(t *testing.T) {
 	nr := NewNewsRepo(db)
 	fmt.Println(realNews)
 
@@ -69,6 +69,7 @@ func TestGetNewsByID(t *testing.T) {
 	// get wrong news by id
 	wrongNews, err := nr.NewsByID(6)
 	assert.Nil(t, wrongNews)
+
 	// get true news by id
 	actualNews, err := nr.NewsByID(realNews.ID)
 	assert.NoError(t, err)
@@ -79,42 +80,38 @@ func TestGetNewsByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetNewsByTagID(t *testing.T) {
+func TestNewsWithFilters(t *testing.T) {
 	nr := NewNewsRepo(db)
+	qb := &nr.QB
+	id := 13
+	categoryID := 3
+	tagID := 1
+	sortTitle := false
+	qb.AddFilter("\"newsId\"", id)
+	qb.AddFilter("\"categoryId\"", categoryID)
+	qb.AddNewFilter("ANY (\"tagIds\")", tagID)
+	qb.AddSort("title", sortTitle)
 
 	// get news by tag
-	actualNews, err := nr.NewsByTagID(1)
+	actualNews, err := nr.NewsWithFilters(qb)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(actualNews), "there is no news with this tagId")
-	fmt.Println(actualNews)
 }
 
-func TestGetNewsByCategoryID(t *testing.T) {
+func TestNewsWithPagination(t *testing.T) {
 	nr := NewNewsRepo(db)
+	qb := &nr.QB
+	page := 3
+	pageSize := 2
+	categoryID := 3
+	tagID := 1
+	sortTitle := false
+	qb.AddFilter("\"categoryId\"", categoryID)
+	qb.AddNewFilter("ANY (\"tagIds\")", tagID)
+	qb.AddSort("title", sortTitle)
 
-	// get news by category
-	actualNews, err := nr.NewsByCategoryID(1)
+	// get news by tag
+	actualNews, err := nr.NewsWithPagination(page, pageSize, qb)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(actualNews), "there is no news with this categoryId")
-	fmt.Println(actualNews)
-}
-
-func TestGetNewsByCategoryIDWithPagination(t *testing.T) {
-	nr := NewNewsRepo(db)
-
-	// get news by category with pagination
-	actualNews, err := nr.NewsByCategoryIDWithPagination(1, 3, 3)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(actualNews))
-	fmt.Println(actualNews)
-}
-
-func TestGetNewsByTagIDWithPagination(t *testing.T) {
-	nr := NewNewsRepo(db)
-
-	// get news by category with pagination
-	actualNews, err := nr.NewsByTagIDWithPagination(1, 3, 3)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(actualNews))
-	fmt.Println(actualNews)
+	assert.Equal(t, 0, len(actualNews), "there is no news with this tagId")
 }

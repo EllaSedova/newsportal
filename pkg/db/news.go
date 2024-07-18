@@ -1,114 +1,107 @@
 package db
 
 import (
-	"fmt"
+	"errors"
 	"github.com/go-pg/pg/v10"
 )
 
 type NewsRepo struct {
 	*pg.DB
+	QB QueryBuilder
 }
 
+const (
+	StatusEnabled = iota + 1
+	StatusDisabled
+	StatusDeleted
+)
+
 func NewNewsRepo(db *pg.DB) NewsRepo {
-	return NewsRepo{DB: db}
+	return NewsRepo{DB: db, QB: *NewQueryBuilder()}
 }
 
 // NewsByID возвращает News по id из бд
 func (nr *NewsRepo) NewsByID(id int) (*News, error) {
 	news := &News{ID: id}
-	err := nr.Model(news).WherePK().Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByID]: %s\n", err)
+	err := nr.Model(news).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no news were found with this newsID")
 	}
-	return news, nil
+	return news, err
 }
 
-// NewsByTagID возвращает все новости с заданным тегом
-func (nr *NewsRepo) NewsByTagID(tagID int) ([]News, error) {
+// NewsWithFilters возвращает все новости с необходимыми фильтрами
+func (nr *NewsRepo) NewsWithFilters(qb *QueryBuilder) ([]News, error) {
 	var news []News
-	err := nr.Model(&news).Where("? = ANY (\"tagIds\")", tagID).Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByTagID]: %s\n", err)
+	query := nr.Model(&news)
+	query = qb.Apply(query)
+	err := query.Where("\"statusId\" != ?", StatusDeleted).Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no news were found with this filter")
 	}
-	return news, nil
+	return news, err
 }
 
-// NewsByCategoryID возвращает все новости в заданной категории
-func (nr *NewsRepo) NewsByCategoryID(categoryID int) ([]News, error) {
-	var news []News
-	err := nr.Model(&news).Where("\"categoryId\" = ?", categoryID).Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByCategoryID]: %s\n", err)
-	}
-	return news, nil
-}
-
-// NewsByTagIDWithLimit возвращает ограниченное количество новостей с заданным тегом
-func (nr *NewsRepo) NewsByTagIDWithLimit(tagID, limit int) ([]News, error) {
-	var news []News
-	err := nr.Model(&news).Where("? = ANY (\"tagIds\")", tagID).Limit(limit).Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByTagIDWithLimit]: %s\n", err)
-	}
-	return news, nil
-}
-
-// NewsByCategoryIDWithLimit возвращает ограниченное количество новостей в заданной категории
-func (nr *NewsRepo) NewsByCategoryIDWithLimit(categoryID, limit int) ([]News, error) {
-	var news []News
-	err := nr.Model(&news).Where("\"categoryId\" = ?", categoryID).Limit(limit).Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByCategoryIDWithLimit]: %s\n", err)
-	}
-	return news, nil
-}
-
-// NewsByTagIDWithPagination возвращает новости с заданным тегом с пагинацией
-func (nr *NewsRepo) NewsByTagIDWithPagination(tagID, page, pageSize int) ([]News, error) {
+// NewsWithPagination возвращает новости с пагинацией и фильтрами
+func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]News, error) {
 	var news []News
 	offset := (page - 1) * pageSize
-	err := nr.Model(&news).
-		Where("? = ANY (\"tagIds\")", tagID).
+	query := nr.Model(&news)
+	query = qb.Apply(query)
+
+	err := query.Where("\"statusId\" != ?", StatusDeleted).
 		Offset(offset).
 		Limit(pageSize).
 		Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByTagIDWithPagination]: %s\n", err)
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no news were found on this page")
 	}
-	return news, nil
-}
-
-// NewsByCategoryIDWithPagination возвращает новости в заданной категории с пагинацией
-func (nr *NewsRepo) NewsByCategoryIDWithPagination(categoryID, page, pageSize int) ([]News, error) {
-	var news []News
-	offset := (page - 1) * pageSize
-	err := nr.Model(&news).
-		Where("\"categoryId\" = ?", categoryID).
-		Offset(offset).
-		Limit(pageSize).
-		Select()
-	if err != nil {
-		return nil, fmt.Errorf("[NewsByCategoryIDWithPagination]: %s\n", err)
-	}
-	return news, nil
+	return news, err
 }
 
 // CategoryByID возвращает Category по id из бд
 func (nr *NewsRepo) CategoryByID(id int) (*Category, error) {
 	category := &Category{ID: id}
-	err := nr.Model(category).WherePK().Select()
-	if err != nil {
-		return nil, fmt.Errorf("[CategoryByID]: %s\n", err)
+	err := nr.Model(category).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no categories were found with this categoryID")
 	}
-	return category, nil
+	return category, err
 }
 
 // TagByID возвращает Tag по id из бд
 func (nr *NewsRepo) TagByID(id int) (*Tag, error) {
 	tag := &Tag{ID: id}
-	err := nr.Model(tag).WherePK().Select()
-	if err != nil {
-		return nil, fmt.Errorf("[TagByID]: %s\n", err)
+	err := nr.Model(tag).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no tags were found with this tagID")
 	}
-	return tag, nil
+	return tag, err
+}
+
+// CategoriesWithSort возвращает все категории со статусом не равным 3
+// и отсортированными по полю orderNumber, а затем по полю title
+func (nr *NewsRepo) CategoriesWithSort() ([]Category, error) {
+	var categories []Category
+	err := nr.Model(&categories).
+		Where(" \"statusId\" != ?", StatusDeleted).
+		OrderExpr("\"orderNumber\" IS NULL, \"orderNumber\" ASC, title ASC").
+		Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no categories were found")
+	}
+	return categories, err
+}
+
+// TagsWithSort возвращает все теги со статусом не равным 3, отсортированные по полю title
+func (nr *NewsRepo) TagsWithSort() ([]Tag, error) {
+	var tags []Tag
+	err := nr.Model(&tags).
+		Where(" \"statusId\" != ?", StatusDeleted).
+		OrderExpr("title ASC").
+		Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = errors.New("no tags were found")
+	}
+	return tags, err
 }
