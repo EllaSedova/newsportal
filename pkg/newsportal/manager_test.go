@@ -50,7 +50,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetNewsByID(t *testing.T) {
-
 	// get wrong news by id
 	wrongNews, err := nm.NewsByID(6)
 	assert.Nil(t, wrongNews)

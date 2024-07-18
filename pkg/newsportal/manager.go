@@ -1,6 +1,7 @@
 package newsportal
 
 import (
+	"fmt"
 	"newsportal/pkg/db"
 )
 
@@ -8,33 +9,53 @@ type Manager struct {
 	nr db.NewsRepo
 }
 
+const defaultPage = 1
+
 func ptri(r int) *int { return &r }
+
 func NewManager(db db.NewsRepo) *Manager {
 	return &Manager{nr: db}
 }
+
 func (m Manager) NewsByID(id int) (*NewsSummary, error) {
 	news, err := m.nr.NewsByID(id)
-	return NewsSummaryFromDb(news), err
+	if err != nil {
+		return nil, fmt.Errorf("error while getting news by id: %w", err)
+	}
+	if news != nil {
+		var tags []db.Tag
+		for _, tagID := range news.TagIDs {
+			tag, err := m.nr.TagByID(tagID)
+			if err != nil {
+				return nil, fmt.Errorf("error while getting tags by ids: %w", err)
+			}
+			tags = append(tags, *tag)
+		}
+	}
+	return NewsSummaryFromDb(news), nil
 }
 
-func (m Manager) News(id, categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
+func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
+	tags, err := m.nr.TagsByIDs(ids)
+	return TagsFromDb(tags), err
+}
+
+func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
 	qb := m.nr.QB
-	if id != nil {
-		qb.AddFilter(db.Columns.News.ID, *id)
-	}
+
 	if categoryID != nil {
-		qb.AddFilter("\"categoryId\"", *categoryID)
+		qb.AddFilter(`t."categoryId"`, *categoryID)
 	}
 	if tagID != nil {
-		qb.AddNewFilter("ANY (\"tagIds\")", *tagID)
+		qb.AddNewFilter(`ANY (t."tagIds")`, *tagID)
 	}
 	if sortTitle != nil && *sortTitle {
-		qb.AddSort("title", true)
+		qb.AddSort(`t.title`, true)
 	}
 
 	if pageSize != nil { // если есть лимит
 		if page == nil { // если нет пагинации
-			page = ptri(1)
+			page = ptri(defaultPage)
 		}
 		news, err := m.ByPage(*page, *pageSize, &qb)
 		return news, err

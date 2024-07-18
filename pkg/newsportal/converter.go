@@ -11,12 +11,13 @@ func NewsSummaryFromDb(in *db.News) (out *NewsSummary) {
 			Title:       in.Title,
 			CategoryID:  in.CategoryID,
 			Foreword:    in.Foreword,
-			Content:     in.Content,
 			TagIDs:      in.TagIDs,
+			Content:     in.Content,
 			Author:      in.Author,
 			PublishedAt: in.PublishedAt,
 			StatusID:    in.StatusID,
 		}
+		out.Category = CategoryFromDb(in.Category)
 	}
 	return
 }

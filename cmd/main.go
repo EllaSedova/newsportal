@@ -41,10 +41,7 @@ func main() {
 	}
 
 	// create app
-	a, err := app.New(dbc)
-	if err != nil {
-		log.Fatalf("Application creation error: %v", err)
-	}
+	a := app.New(dbc)
 
 	// run application
 	err = a.Run()

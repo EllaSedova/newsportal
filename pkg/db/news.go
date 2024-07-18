@@ -23,9 +23,9 @@ func NewNewsRepo(db *pg.DB) NewsRepo {
 // NewsByID возвращает News по id из бд
 func (nr *NewsRepo) NewsByID(id int) (*News, error) {
 	news := &News{ID: id}
-	err := nr.Model(news).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	err := nr.Model(news).Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).WherePK().Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no news were found with this newsID")
+		return nil, nil
 	}
 	return news, err
 }
@@ -35,9 +35,9 @@ func (nr *NewsRepo) NewsWithFilters(qb *QueryBuilder) ([]News, error) {
 	var news []News
 	query := nr.Model(&news)
 	query = qb.Apply(query)
-	err := query.Where("\"statusId\" != ?", StatusDeleted).Select()
+	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no news were found with this filter")
+		return nil, nil
 	}
 	return news, err
 }
@@ -49,12 +49,12 @@ func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]
 	query := nr.Model(&news)
 	query = qb.Apply(query)
 
-	err := query.Where("\"statusId\" != ?", StatusDeleted).
+	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
 		Offset(offset).
 		Limit(pageSize).
 		Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no news were found on this page")
+		return nil, nil
 	}
 	return news, err
 }
@@ -62,9 +62,9 @@ func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]
 // CategoryByID возвращает Category по id из бд
 func (nr *NewsRepo) CategoryByID(id int) (*Category, error) {
 	category := &Category{ID: id}
-	err := nr.Model(category).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	err := nr.Model(category).Where(`"statusId" != ?`, StatusDeleted).WherePK().Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no categories were found with this categoryID")
+		return nil, nil
 	}
 	return category, err
 }
@@ -72,11 +72,21 @@ func (nr *NewsRepo) CategoryByID(id int) (*Category, error) {
 // TagByID возвращает Tag по id из бд
 func (nr *NewsRepo) TagByID(id int) (*Tag, error) {
 	tag := &Tag{ID: id}
-	err := nr.Model(tag).Where("\"statusId\" != ?", StatusDeleted).WherePK().Select()
+	err := nr.Model(tag).Where(`"statusId" != ?`, StatusDeleted).WherePK().Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no tags were found with this tagID")
+		return nil, nil
 	}
 	return tag, err
+}
+
+// TagsByIDs возвращает Tags по ids из бд
+func (nr *NewsRepo) TagsByIDs(ids []int) ([]Tag, error) {
+	var tags []Tag
+	err := nr.Model(&tags).Where(`"tagId" IN (?)`, pg.In(ids)).Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		return nil, nil
+	}
+	return tags, err
 }
 
 // CategoriesWithSort возвращает все категории со статусом не равным 3
@@ -84,11 +94,11 @@ func (nr *NewsRepo) TagByID(id int) (*Tag, error) {
 func (nr *NewsRepo) CategoriesWithSort() ([]Category, error) {
 	var categories []Category
 	err := nr.Model(&categories).
-		Where(" \"statusId\" != ?", StatusDeleted).
-		OrderExpr("\"orderNumber\" IS NULL, \"orderNumber\" ASC, title ASC").
+		Where(` "statusId" != ?`, StatusDeleted).
+		OrderExpr(`"orderNumber" IS NULL, "orderNumber" ASC, title ASC`).
 		Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no categories were found")
+		return nil, nil
 	}
 	return categories, err
 }
@@ -97,11 +107,11 @@ func (nr *NewsRepo) CategoriesWithSort() ([]Category, error) {
 func (nr *NewsRepo) TagsWithSort() ([]Tag, error) {
 	var tags []Tag
 	err := nr.Model(&tags).
-		Where(" \"statusId\" != ?", StatusDeleted).
+		Where(` "statusId" != ?`, StatusDeleted).
 		OrderExpr("title ASC").
 		Select()
 	if errors.Is(err, pg.ErrNoRows) {
-		err = errors.New("no tags were found")
+		return nil, nil
 	}
 	return tags, err
 }

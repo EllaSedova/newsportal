@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +60,6 @@ func TestMain(m *testing.M) {
 
 func TestNewsByID(t *testing.T) {
 	nr := NewNewsRepo(db)
-	fmt.Println(realNews)
 
 	// add news
 	_, err := db.Model(&realNews).Insert()
@@ -114,4 +112,14 @@ func TestNewsWithPagination(t *testing.T) {
 	actualNews, err := nr.NewsWithPagination(page, pageSize, qb)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(actualNews), "there is no news with this tagId")
+}
+
+func TestTagsByIDs(t *testing.T) {
+	nr := NewNewsRepo(db)
+	ids := []int{1, 2}
+	// get news by tag
+	actualTags, err := nr.TagsByIDs(ids)
+	log.Println(actualTags)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(actualTags), "there is no news with this tagId")
 }
