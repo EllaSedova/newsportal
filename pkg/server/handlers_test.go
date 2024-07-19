@@ -21,7 +21,7 @@ var nm *newsportal.Manager
 var ss *ServerService
 var e *echo.Echo
 
-const trueNews = `[{"newsId":13,"title":"Новость3","categoryId":{"categoryId":3,"title":"h","orderNumber":1,"alias":"u"},"foreword":"Преамбула","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}]
+const trueNews = `{"newsId":11,"title":"Новость1","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}
 `
 const wrongNews = `{}
 `
@@ -54,14 +54,14 @@ func TestNewsById(t *testing.T) {
 		return ss.NewsByID(c) // Замените на вашу функцию-обработчик
 	})
 	// создание нового HTTP запроса
-	req := httptest.NewRequest(http.MethodGet, "/news/13", nil)
+	req := httptest.NewRequest(http.MethodGet, "/news/11", nil)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
 
 	// установка параметров
 	c.SetParamNames("id")
-	c.SetParamValues("13")
+	c.SetParamValues("11")
 
 	// выполнение запроса
 	e.ServeHTTP(rec, req)

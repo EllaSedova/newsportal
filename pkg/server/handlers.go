@@ -34,8 +34,7 @@ func (ss *ServerService) NewsByID(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
-	tags, err := ss.m.TagsByIDs(news.TagIDs)
-	newNews := NewsSummaryFromManager(news, tags)
+	newNews := NewsFromManager(news)
 	return c.JSON(http.StatusOK, newNews)
 }
 
@@ -45,47 +44,32 @@ func (ss *ServerService) NewsWithFilters(c echo.Context) error {
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
-	news, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle)
+	news, _, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, false)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	// собираем все уникальные tagID
-	tagIDMap := make(map[int]struct{})
+	var newNewsList []NewsSummary
 	for _, summary := range news {
-		for _, tagID := range summary.TagIDs {
-			tagIDMap[tagID] = struct{}{}
-		}
-	}
-
-	var uniqueTagIDs []int
-	for tagID := range tagIDMap {
-		uniqueTagIDs = append(uniqueTagIDs, tagID)
-	}
-
-	// возвращаем теги из бд
-	tags, err := ss.m.TagsByIDs(uniqueTagIDs)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	// создаём карту тегов
-	tagMap := make(map[int]newsportal.Tag)
-	for _, tag := range tags {
-		tagMap[tag.ID] = tag
-	}
-
-	var newNewsList []News
-	for _, summary := range news {
-		var newsTags []newsportal.Tag
-		for _, tagID := range summary.TagIDs {
-			newsTags = append(newsTags, tagMap[tagID])
-		}
-		newNews := ShortNewsFromManager(&summary, newsTags)
+		newNews := NewsSummaryFromManager(&summary)
 		newNewsList = append(newNewsList, *newNews)
 	}
 
 	return c.JSON(http.StatusOK, newNewsList)
+}
+
+// NewsCountWithFilters получение количества новостей с фильтрами
+func (ss *ServerService) NewsCountWithFilters(c echo.Context) error {
+	var params FilterParams
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, "invalid query parameters")
+	}
+	_, count, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, true)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, count)
 }
 
 // Categories получение всех категорий

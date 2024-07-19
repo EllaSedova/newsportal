@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"github.com/go-pg/pg/v10"
+	"log"
 )
 
 type NewsRepo struct {
@@ -38,7 +39,6 @@ func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]
 	if qb != nil {
 		query = qb.Apply(query)
 	}
-
 	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
 		Offset(offset).
 		Limit(pageSize).
@@ -47,6 +47,25 @@ func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]
 		return nil, nil
 	}
 	return news, err
+}
+
+// NewsCount возвращает количество новостей с пагинацией и фильтрами
+func (nr *NewsRepo) NewsCount(page, pageSize int, qb *QueryBuilder) (int, error) {
+	//var count int
+	offset := (page - 1) * pageSize
+	query := nr.Model((*News)(nil))
+	if qb != nil {
+		query = qb.Apply(query)
+	}
+
+	count, err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
+		Offset(offset).
+		Limit(pageSize).
+		Count()
+	if errors.Is(err, pg.ErrNoRows) {
+		return 0, nil
+	}
+	return count, err
 }
 
 // CategoryByID возвращает Category по id из бд
@@ -63,6 +82,7 @@ func (nr *NewsRepo) CategoryByID(id int) (*Category, error) {
 func (nr *NewsRepo) TagByID(id int) (*Tag, error) {
 	tag := &Tag{ID: id}
 	err := nr.Model(tag).Where(`"statusId" != ?`, StatusDeleted).WherePK().Select()
+	log.Println("vrrgr", err)
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	}

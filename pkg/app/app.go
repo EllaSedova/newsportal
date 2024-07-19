@@ -45,6 +45,7 @@ func (a *App) registerHandlers() {
 	a.e.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
 
 	a.e.GET("/news", a.ss.NewsWithFilters)
+	a.e.GET("/news/count", a.ss.NewsCountWithFilters)
 	a.e.GET("/news/:id", a.ss.NewsByID)
 	a.e.GET("/categories", a.ss.Categories)
 	a.e.GET("/tags", a.ss.Tags)

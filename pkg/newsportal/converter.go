@@ -4,20 +4,13 @@ import (
 	"newsportal/pkg/db"
 )
 
-func NewsSummaryFromDb(in *db.News) (out *News) {
+func NewsFromDb(in *db.News, tags []Tag) (out *News) {
 	if in != nil {
 		out = &News{
-			News: in,
+			News: *in,
 		}
 		out.Category = CategoryFromDb(in.Category)
-	}
-	return
-}
-
-func NewsFromDb(in []db.News) (out []News) {
-	for _, news := range in {
-		newNews := NewsSummaryFromDb(&news)
-		out = append(out, *newNews)
+		out.Tags = tags
 	}
 	return
 }

@@ -1,4 +1,4 @@
-package server
+package rpc
 
 import (
 	"newsportal/pkg/newsportal"

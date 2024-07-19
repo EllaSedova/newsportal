@@ -1,7 +1,6 @@
 package newsportal
 
 import (
-	"log"
 	"newsportal/pkg/db"
 )
 
@@ -20,7 +19,37 @@ func NewManager(db db.NewsRepo) *Manager {
 
 func (m Manager) NewsByID(id int) (*News, error) {
 	news, err := m.nr.NewsByID(id)
-	return NewsSummaryFromDb(news), err
+	if err != nil || news == nil {
+		return nil, err
+	}
+	// собираем все уникальные tagID
+	tagIDMap := make(map[int]struct{})
+
+	for _, tagID := range news.TagIDs {
+		tagIDMap[tagID] = struct{}{}
+	}
+
+	var uniqueTagIDs []int
+	for tagID := range tagIDMap {
+		uniqueTagIDs = append(uniqueTagIDs, tagID)
+	}
+
+	// возвращаем теги из бд
+	tags, err := m.TagsByIDs(uniqueTagIDs)
+
+	// создаём карту тегов
+	tagMap := make(map[int]Tag)
+	for _, tag := range tags {
+		tagMap[tag.ID] = tag
+	}
+
+	var newsTags []Tag
+
+	for _, tagID := range news.TagIDs {
+		newsTags = append(newsTags, tagMap[tagID])
+	}
+
+	return NewsFromDb(news, newsTags), err
 }
 
 func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
@@ -28,7 +57,7 @@ func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
 	return TagsFromDb(tags), err
 }
 
-func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]News, error) {
+func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool, countRequest bool) ([]News, int, error) {
 	qb := m.nr.QB
 
 	if categoryID != nil {
@@ -51,16 +80,60 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) (
 	} else if *pageSize <= 0 {
 		pageSize = ptri(defaultPageSize)
 	}
-	log.Println(page, pageSize)
+	// если нужо только количество новостей
+	if countRequest {
+		count, err := m.Count(*page, *pageSize, &qb)
+		return nil, count, err
+	}
 	news, err := m.ByPage(*page, *pageSize, &qb)
-	return news, err
+	if news != nil {
+		// собираем все уникальные tagID
+		tagIDMap := make(map[int]struct{})
+		for _, summary := range news {
+			for _, tagId := range summary.TagIDs {
+				tagIDMap[tagId] = struct{}{}
+			}
+		}
+
+		var uniqueTagIDs []int
+		for tagId := range tagIDMap {
+			uniqueTagIDs = append(uniqueTagIDs, tagId)
+		}
+		// возвращаем теги из бд
+		tags, err := m.TagsByIDs(uniqueTagIDs)
+		// создаём карту тегов
+		tagMap := make(map[int]Tag)
+		for _, tag := range tags {
+			tagMap[tag.ID] = tag
+		}
+
+		var newNewsList []News
+		for _, summary := range news {
+			var newsTags []Tag
+			for _, tagId := range summary.TagIDs {
+				newsTags = append(newsTags, tagMap[tagId])
+			}
+			newNews := NewsFromDb(&summary, newsTags)
+			newNewsList = append(newNewsList, *newNews)
+		}
+		return newNewsList, 0, err
+	}
+
+	return nil, 0, err
 }
 
 // ByPage возвращает все новости с определённой страницы
-func (m Manager) ByPage(page, pageSize int, qb *db.QueryBuilder) ([]News, error) {
+func (m Manager) ByPage(page, pageSize int, qb *db.QueryBuilder) ([]db.News, error) {
 	// get news with pagination
 	news, err := m.nr.NewsWithPagination(page, pageSize, qb)
-	return NewsFromDb(news), err
+	return news, err
+}
+
+// Count возвращает количество новостей с определённой страницы
+func (m Manager) Count(page, pageSize int, qb *db.QueryBuilder) (int, error) {
+	// get news with pagination
+	count, err := m.nr.NewsCount(page, pageSize, qb)
+	return count, err
 }
 
 // Categories возвращает все категории
