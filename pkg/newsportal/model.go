@@ -1,18 +1,13 @@
 package newsportal
 
-import "time"
+import (
+	"newsportal/pkg/db"
+)
 
-type NewsSummary struct {
-	ID          int
-	Title       string
-	CategoryID  int
-	Foreword    string
-	Content     *string
-	TagIDs      []int
-	Author      string
-	PublishedAt time.Time
-	StatusID    int
-	Category    *Category
+type News struct {
+	*db.News
+	Category *Category
+	Tags     []Tag
 }
 
 type Category struct {

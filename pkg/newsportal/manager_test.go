@@ -16,7 +16,7 @@ func ptrs(r string) *string { return &r }
 var dbc *pg.DB
 var nr db.NewsRepo
 var nm *Manager
-var realNews NewsSummary
+var realNews News
 
 func TestMain(m *testing.M) {
 	opts := &pg.Options{
@@ -35,16 +35,23 @@ func TestMain(m *testing.M) {
 	nr = db.NewNewsRepo(dbc)
 	nm = NewManager(nr)
 
-	realNews = NewsSummary{
-		ID:          11,
-		Title:       "Новость1",
-		CategoryID:  1,
-		Foreword:    "Преамбула",
-		Content:     ptrs("Контент"),
-		TagIDs:      []int{1, 2},
-		Author:      "Автор",
-		PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
-		StatusID:    1,
+	realNews = News{
+		News: &db.News{ID: 11,
+			Title:       "Новость1",
+			CategoryID:  1,
+			Foreword:    "Преамбула",
+			Content:     ptrs("Контент"),
+			TagIDs:      []int{1, 2},
+			Author:      "Автор",
+			PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 010000, time.Local),
+			StatusID:    1},
+		Category: &Category{
+			ID:          1,
+			Title:       "рр",
+			OrderNumber: nil,
+			Alias:       "к",
+			StatusID:    1,
+		},
 	}
 	os.Exit(m.Run())
 }

@@ -3,16 +3,22 @@ package app
 import (
 	"github.com/go-pg/pg/v10"
 	"github.com/labstack/echo/v4"
+	zm "github.com/vmkteam/zenrpc-middleware"
+	"github.com/vmkteam/zenrpc/v2"
+	"net/http"
 	"newsportal/pkg/db"
 	"newsportal/pkg/newsportal"
+	"newsportal/pkg/rpc"
 	"newsportal/pkg/server"
 )
 
 type App struct {
-	nr db.NewsRepo
-	nm *newsportal.Manager
-	ss *server.ServerService
-	e  *echo.Echo
+	nr   db.NewsRepo
+	nm   *newsportal.Manager
+	ss   *server.ServerService
+	e    *echo.Echo
+	rpc  zenrpc.Server
+	rpcs *rpc.RPCService
 }
 
 func New(dbo *pg.DB) *App {
@@ -22,6 +28,8 @@ func New(dbo *pg.DB) *App {
 	}
 	a.nm = newsportal.NewManager(a.nr)
 	a.ss = server.NewServerService(a.nm)
+	a.rpcs = rpc.NewRPCService(a.nm)
+	a.rpc = rpc.New(a.nm)
 	return a
 }
 
@@ -33,6 +41,9 @@ func (a *App) Run() error {
 }
 
 func (a *App) registerHandlers() {
+	a.e.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(a.rpc)))
+	a.e.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
+
 	a.e.GET("/news", a.ss.NewsWithFilters)
 	a.e.GET("/news/:id", a.ss.NewsByID)
 	a.e.GET("/categories", a.ss.Categories)

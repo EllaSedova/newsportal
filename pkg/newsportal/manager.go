@@ -18,7 +18,7 @@ func NewManager(db db.NewsRepo) *Manager {
 	return &Manager{nr: db}
 }
 
-func (m Manager) NewsByID(id int) (*NewsSummary, error) {
+func (m Manager) NewsByID(id int) (*News, error) {
 	news, err := m.nr.NewsByID(id)
 	return NewsSummaryFromDb(news), err
 }
@@ -28,7 +28,7 @@ func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
 	return TagsFromDb(tags), err
 }
 
-func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
+func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]News, error) {
 	qb := m.nr.QB
 
 	if categoryID != nil {
@@ -57,7 +57,7 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) (
 }
 
 // ByPage возвращает все новости с определённой страницы
-func (m Manager) ByPage(page, pageSize int, qb *db.QueryBuilder) ([]NewsSummary, error) {
+func (m Manager) ByPage(page, pageSize int, qb *db.QueryBuilder) ([]News, error) {
 	// get news with pagination
 	news, err := m.nr.NewsWithPagination(page, pageSize, qb)
 	return NewsFromDb(news), err

@@ -17,7 +17,7 @@ func CategoryToNews(in *NewsSummary, category *newsportal.Category) (out NewsSum
 	return
 }
 
-func NewsSummaryFromManager(in *newsportal.NewsSummary, tags []newsportal.Tag) (out *NewsSummary) {
+func NewsSummaryFromManager(in *newsportal.News, tags []newsportal.Tag) (out *NewsSummary) {
 	if in != nil {
 		out = &NewsSummary{
 			ID:          in.ID,
@@ -33,7 +33,7 @@ func NewsSummaryFromManager(in *newsportal.NewsSummary, tags []newsportal.Tag) (
 	return
 }
 
-func ShortNewsFromManager(in *newsportal.NewsSummary, tags []newsportal.Tag) (out *News) {
+func ShortNewsFromManager(in *newsportal.News, tags []newsportal.Tag) (out *News) {
 	if in != nil {
 		out = &News{
 			ID:          in.ID,
