@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	nm = NewManager(nr)
 
 	realNews = News{
-		News: &db.News{ID: 11,
+		News: db.News{ID: 11,
 			Title:       "Новость1",
 			CategoryID:  1,
 			Foreword:    "Преамбула",
