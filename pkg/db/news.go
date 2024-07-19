@@ -30,24 +30,14 @@ func (nr *NewsRepo) NewsByID(id int) (*News, error) {
 	return news, err
 }
 
-// NewsWithFilters возвращает все новости с необходимыми фильтрами
-func (nr *NewsRepo) NewsWithFilters(qb *QueryBuilder) ([]News, error) {
-	var news []News
-	query := nr.Model(&news)
-	query = qb.Apply(query)
-	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).Select()
-	if errors.Is(err, pg.ErrNoRows) {
-		return nil, nil
-	}
-	return news, err
-}
-
 // NewsWithPagination возвращает новости с пагинацией и фильтрами
 func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]News, error) {
 	var news []News
 	offset := (page - 1) * pageSize
 	query := nr.Model(&news)
-	query = qb.Apply(query)
+	if qb != nil {
+		query = qb.Apply(query)
+	}
 
 	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
 		Offset(offset).

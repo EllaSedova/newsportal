@@ -49,14 +49,39 @@ func (ss *ServerService) NewsWithFilters(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+
+	// собираем все уникальные tagID
+	tagIDMap := make(map[int]struct{})
+	for _, summary := range news {
+		for _, tagID := range summary.TagIDs {
+			tagIDMap[tagID] = struct{}{}
+		}
+	}
+
+	var uniqueTagIDs []int
+	for tagID := range tagIDMap {
+		uniqueTagIDs = append(uniqueTagIDs, tagID)
+	}
+
+	// возвращаем теги из бд
+	tags, err := ss.m.TagsByIDs(uniqueTagIDs)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	// создаём карту тегов
+	tagMap := make(map[int]newsportal.Tag)
+	for _, tag := range tags {
+		tagMap[tag.ID] = tag
+	}
+
 	var newNewsList []News
 	for _, summary := range news {
-		tags, err := ss.m.TagsByIDs(summary.TagIDs)
-		newNews := ShortNewsFromManager(&summary, tags)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
+		var newsTags []newsportal.Tag
+		for _, tagID := range summary.TagIDs {
+			newsTags = append(newsTags, tagMap[tagID])
 		}
-
+		newNews := ShortNewsFromManager(&summary, newsTags)
 		newNewsList = append(newNewsList, *newNews)
 	}
 

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ type Config struct {
 
 var db *pg.DB
 var realNews News
+var nr NewsRepo
 
 func TestMain(m *testing.M) {
 	tomlData, err := os.ReadFile("../../cfg/local.toml")
@@ -55,12 +57,11 @@ func TestMain(m *testing.M) {
 		PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
 		StatusID:    1,
 	}
+	nr = NewNewsRepo(db)
 	os.Exit(m.Run())
 }
 
 func TestNewsByID(t *testing.T) {
-	nr := NewNewsRepo(db)
-
 	// add news
 	_, err := db.Model(&realNews).Insert()
 
@@ -78,34 +79,15 @@ func TestNewsByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestNewsWithFilters(t *testing.T) {
-	nr := NewNewsRepo(db)
-	qb := &nr.QB
-	id := 13
-	categoryID := 3
-	tagID := 1
-	sortTitle := false
-	qb.AddFilter("\"newsId\"", id)
-	qb.AddFilter("\"categoryId\"", categoryID)
-	qb.AddNewFilter("ANY (\"tagIds\")", tagID)
-	qb.AddSort("title", sortTitle)
-
-	// get news by tag
-	actualNews, err := nr.NewsWithFilters(qb)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(actualNews), "there is no news with this tagId")
-}
-
 func TestNewsWithPagination(t *testing.T) {
-	nr := NewNewsRepo(db)
 	qb := &nr.QB
 	page := 3
 	pageSize := 2
 	categoryID := 3
 	tagID := 1
 	sortTitle := false
-	qb.AddFilter("\"categoryId\"", categoryID)
-	qb.AddNewFilter("ANY (\"tagIds\")", tagID)
+	qb.AddFilter(`"categoryId"`, categoryID)
+	qb.AddNewFilter(`ANY ("tagIds")`, tagID)
 	qb.AddSort("title", sortTitle)
 
 	// get news by tag
@@ -115,11 +97,49 @@ func TestNewsWithPagination(t *testing.T) {
 }
 
 func TestTagsByIDs(t *testing.T) {
-	nr := NewNewsRepo(db)
 	ids := []int{1, 2}
 	// get news by tag
 	actualTags, err := nr.TagsByIDs(ids)
 	log.Println(actualTags)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(actualTags), "there is no news with this tagId")
+}
+
+func TestNewsRepo_NewsWithPagination(t *testing.T) {
+	type fields struct {
+		QB QueryBuilder
+	}
+	type args struct {
+		page     int
+		pageSize int
+		qb       *QueryBuilder
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []News
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "invalid filters",
+			args: args{
+				page:     2,
+				pageSize: -2,
+				qb:       &nr.QB,
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//tt.args.qb.AddFilter(`"categoryID"`, 3)
+			got, err := nr.NewsWithPagination(tt.args.page, tt.args.pageSize, tt.args.qb)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewsWithPagination(%v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.qb)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "NewsWithPagination(%v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.qb)
+		})
+	}
 }

@@ -1,7 +1,7 @@
 package newsportal
 
 import (
-	"fmt"
+	"log"
 	"newsportal/pkg/db"
 )
 
@@ -10,6 +10,7 @@ type Manager struct {
 }
 
 const defaultPage = 1
+const defaultPageSize = 10
 
 func ptri(r int) *int { return &r }
 
@@ -19,20 +20,7 @@ func NewManager(db db.NewsRepo) *Manager {
 
 func (m Manager) NewsByID(id int) (*NewsSummary, error) {
 	news, err := m.nr.NewsByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("error while getting news by id: %w", err)
-	}
-	if news != nil {
-		var tags []db.Tag
-		for _, tagID := range news.TagIDs {
-			tag, err := m.nr.TagByID(tagID)
-			if err != nil {
-				return nil, fmt.Errorf("error while getting tags by ids: %w", err)
-			}
-			tags = append(tags, *tag)
-		}
-	}
-	return NewsSummaryFromDb(news), nil
+	return NewsSummaryFromDb(news), err
 }
 
 func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
@@ -52,22 +40,20 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool) (
 	if sortTitle != nil && *sortTitle {
 		qb.AddSort(`t.title`, true)
 	}
-
-	if pageSize != nil { // если есть лимит
-		if page == nil { // если нет пагинации
-			page = ptri(defaultPage)
-		}
-		news, err := m.ByPage(*page, *pageSize, &qb)
-		return news, err
-	} else {
-		news, err := m.Default(&qb) // если нет ни лимита, ни пагинации
-		return news, err
+	if page == nil {
+		page = ptri(defaultPage)
+	} else if *page <= 0 {
+		page = ptri(defaultPage)
 	}
-}
 
-func (m Manager) Default(qb *db.QueryBuilder) ([]NewsSummary, error) {
-	news, err := m.nr.NewsWithFilters(qb)
-	return NewsFromDb(news), err
+	if pageSize == nil {
+		pageSize = ptri(defaultPageSize)
+	} else if *pageSize <= 0 {
+		pageSize = ptri(defaultPageSize)
+	}
+	log.Println(page, pageSize)
+	news, err := m.ByPage(*page, *pageSize, &qb)
+	return news, err
 }
 
 // ByPage возвращает все новости с определённой страницы
