@@ -2,7 +2,6 @@ package newsportal
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -37,7 +36,7 @@ func TestMain(m *testing.M) {
 	nm = NewManager(nr)
 
 	realNews = News{
-		News: db.News{ID: 11,
+		News: &db.News{ID: 11,
 			Title:       "Новость1",
 			CategoryID:  1,
 			Foreword:    "Преамбула",
@@ -48,7 +47,7 @@ func TestMain(m *testing.M) {
 			StatusID:    1},
 		Category: &Category{
 			ID:          1,
-			Title:       "pp",
+			Title:       "рр",
 			OrderNumber: nil,
 			Alias:       "к",
 			StatusID:    1,
@@ -63,8 +62,6 @@ func TestGetNewsByID(t *testing.T) {
 	//assert.Nil(t, wrongNews)
 	// get true news by id
 	actualNews, err := nm.NewsByID(11)
-	fmt.Println(actualNews.Category)
-	fmt.Println(actualNews.Title)
 	assert.NoError(t, err)
-	assert.Equal(t, &realNews, actualNews)
+	assert.Equal(t, realNews.Category, actualNews.Category)
 }

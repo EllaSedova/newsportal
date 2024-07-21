@@ -48,6 +48,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("DB connection error: %v", err)
 	}
 	realNews = News{
+		ID:          11,
 		Title:       "Новость1",
 		CategoryID:  1,
 		Foreword:    "Преамбула",
@@ -56,7 +57,15 @@ func TestMain(m *testing.M) {
 		Author:      "Автор",
 		PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
 		StatusID:    1,
+		Category: &Category{
+			ID:          1,
+			Title:       "рр",
+			OrderNumber: nil,
+			Alias:       "к",
+			StatusID:    1,
+		},
 	}
+
 	nr = NewNewsRepo(db)
 	os.Exit(m.Run())
 }
@@ -86,9 +95,9 @@ func TestNewsWithPagination(t *testing.T) {
 	categoryID := 3
 	tagID := 1
 	sortTitle := false
-	qb.AddFilter(`"categoryId"`, categoryID)
-	qb.AddNewFilter(`ANY ("tagIds")`, tagID)
-	qb.AddSort("title", sortTitle)
+	qb.AddFilter(`t."categoryId"`, categoryID)
+	qb.AddNewFilter(`ANY (t."tagIds")`, tagID)
+	qb.AddSort("t.title", sortTitle)
 
 	// get news by tag
 	actualNews, err := nr.NewsWithPagination(page, pageSize, qb)
