@@ -347,13 +347,13 @@ func (s RPCService) Invoke(ctx context.Context, method string, params json.RawMe
 			}
 		}
 
-		resp.Set(s.NewsByID(ctx, args.Id))
+		resp.Set(s.NewsByID(args.Id))
 
 	case RPC.RPCService.Categories:
-		resp.Set(s.Categories(ctx))
+		resp.Set(s.Categories())
 
 	case RPC.RPCService.Tags:
-		resp.Set(s.Tags(ctx))
+		resp.Set(s.Tags())
 
 	case RPC.RPCService.NewsWithFilters:
 		var args = struct {
@@ -376,7 +376,7 @@ func (s RPCService) Invoke(ctx context.Context, method string, params json.RawMe
 			}
 		}
 
-		resp.Set(s.NewsWithFilters(ctx, args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle))
+		resp.Set(s.NewsWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle))
 
 	case RPC.RPCService.NewsCountWithFilters:
 		var args = struct {
@@ -399,7 +399,7 @@ func (s RPCService) Invoke(ctx context.Context, method string, params json.RawMe
 			}
 		}
 
-		resp.Set(s.NewsCountWithFilters(ctx, args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle))
+		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle))
 
 	default:
 		resp = zenrpc.NewResponseError(nil, zenrpc.MethodNotFound, "", nil)

@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"context"
 	"github.com/vmkteam/zenrpc/v2"
 	"newsportal/pkg/newsportal"
 )
@@ -25,25 +24,25 @@ func NewRPCService(m *newsportal.Manager) *RPCService {
 }
 
 // NewsByID получение новости по id
-func (rs RPCService) NewsByID(ctx context.Context, id int) (*News, error) {
+func (rs RPCService) NewsByID(id int) (*News, error) {
 	news, err := rs.m.NewsByID(id)
 	return NewsFromManager(news), err
 }
 
 // Categories получение всех категорий
-func (rs RPCService) Categories(ctx context.Context) ([]Category, error) {
+func (rs RPCService) Categories() ([]Category, error) {
 	categories, err := rs.m.Categories()
 	return CategoriesFromManager(categories), err
 }
 
 // Tags получение всех тегов
-func (rs RPCService) Tags(ctx context.Context) ([]Tag, error) {
+func (rs RPCService) Tags() ([]Tag, error) {
 	tags, err := rs.m.Tags()
 	return TagsFromManager(tags), err
 }
 
 // NewsWithFilters получение новости с фильтрами
-func (rs RPCService) NewsWithFilters(ctx context.Context, categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
+func (rs RPCService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
 	var params FilterParams
 	params.CategoryID = categoryID
 	params.TagID = tagID
@@ -60,7 +59,7 @@ func (rs RPCService) NewsWithFilters(ctx context.Context, categoryID, tagID, pag
 }
 
 // NewsCountWithFilters получение количества новостей с фильтрами
-func (rs RPCService) NewsCountWithFilters(ctx context.Context, categoryID, tagID, page, pageSize *int, sortTitle *bool) (int, error) {
+func (rs RPCService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) (int, error) {
 	var params FilterParams
 	params.CategoryID = categoryID
 	params.TagID = tagID

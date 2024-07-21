@@ -108,12 +108,12 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool, c
 		}
 
 		var newNewsList []News
-		for _, summary := range news {
+		for i, summary := range news {
 			var newsTags []Tag
 			for _, tagId := range summary.TagIDs {
 				newsTags = append(newsTags, tagMap[tagId])
 			}
-			newNews := NewsFromDb(&summary, newsTags)
+			newNews := NewsFromDb(&news[i], newsTags)
 			newNewsList = append(newNewsList, *newNews)
 		}
 		return newNewsList, 0, err

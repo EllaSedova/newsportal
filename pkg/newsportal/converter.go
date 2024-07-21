@@ -7,7 +7,7 @@ import (
 func NewsFromDb(in *db.News, tags []Tag) (out *News) {
 	if in != nil {
 		out = &News{
-			News: *in,
+			News: in,
 		}
 		out.Category = CategoryFromDb(in.Category)
 		out.Tags = tags

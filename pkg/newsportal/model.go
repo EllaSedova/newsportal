@@ -5,7 +5,7 @@ import (
 )
 
 type News struct {
-	db.News
+	*db.News
 	Category *Category
 	Tags     []Tag
 }
