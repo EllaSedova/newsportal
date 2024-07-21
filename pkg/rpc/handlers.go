@@ -44,11 +44,7 @@ func (rs RPCService) Tags() ([]Tag, error) {
 // NewsWithFilters получение новости с фильтрами
 func (rs RPCService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
 	var params FilterParams
-	params.CategoryID = categoryID
-	params.TagID = tagID
-	params.Page = page
-	params.PageSize = pageSize
-	params.SortTitle = sortTitle
+	params.Fill(categoryID, tagID, page, pageSize, sortTitle)
 	news, _, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, false)
 	var newNewsList []NewsSummary
 	for _, summary := range news {
@@ -61,11 +57,15 @@ func (rs RPCService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sor
 // NewsCountWithFilters получение количества новостей с фильтрами
 func (rs RPCService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) (int, error) {
 	var params FilterParams
-	params.CategoryID = categoryID
-	params.TagID = tagID
-	params.Page = page
-	params.PageSize = pageSize
-	params.SortTitle = sortTitle
+	params.Fill(categoryID, tagID, page, pageSize, sortTitle)
 	_, count, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, true)
 	return count, err
+}
+
+func (p *FilterParams) Fill(categoryID, tagID, page, pageSize *int, sortTitle *bool) {
+	p.CategoryID = categoryID
+	p.TagID = tagID
+	p.Page = page
+	p.PageSize = pageSize
+	p.SortTitle = sortTitle
 }
