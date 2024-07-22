@@ -4,7 +4,7 @@ import (
 	"newsportal/pkg/db"
 )
 
-func NewsFromDB(in *db.News, tags []Tag) *News {
+func NewsFromDB(in *db.News) *News {
 	if in == nil {
 		return nil
 	}
@@ -12,8 +12,14 @@ func NewsFromDB(in *db.News, tags []Tag) *News {
 	return &News{
 		News:     in,
 		Category: CategoryFromDb(in.Category),
-		Tags:     tags,
 	}
+}
+
+func NewNewsListFromDB(in []db.News) (out []News) {
+	for i := range in {
+		out = append(out, *NewsFromDB(&in[i]))
+	}
+	return
 }
 
 func CategoryFromDb(in *db.Category) *Category {

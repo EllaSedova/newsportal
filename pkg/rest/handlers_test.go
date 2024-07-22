@@ -120,7 +120,6 @@ func TestNewsWithFilters(t *testing.T) {
 
 // создание echo.Context с валидными фильтрами
 func validEchoContext() echo.Context {
-	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/news", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)

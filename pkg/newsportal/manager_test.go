@@ -52,6 +52,7 @@ func TestMain(m *testing.M) {
 			Alias:       "к",
 			StatusID:    1,
 		},
+		//Tags: TagsFromDb(),
 	}
 	os.Exit(m.Run())
 }
@@ -61,7 +62,7 @@ func TestGetNewsByID(t *testing.T) {
 	//wrongNews, err := nm.NewsByID(6)
 	//assert.Nil(t, wrongNews)
 	// get true news by id
-	actualNews, err := nm.NewsByID(15)
+	actualNews, err := nm.NewsByID(13)
 	assert.NoError(t, err)
-	assert.Equal(t, realNews.Category, actualNews.Category)
+	assert.Equal(t, realNews.Tags, actualNews.Tags)
 }
