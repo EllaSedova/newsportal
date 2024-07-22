@@ -57,7 +57,10 @@ func (m Manager) FillTags(newsList []News) error {
 	}
 	for i, summary := range newsList {
 		for _, tagId := range summary.TagIDs {
-			newsList[i].Tags = append(newsList[i].Tags, tagMap[tagId])
+			_, exist := tagMap[tagId]
+			if exist {
+				newsList[i].Tags = append(newsList[i].Tags, tagMap[tagId])
+			}
 		}
 	}
 
@@ -71,8 +74,11 @@ func (m Manager) NewsByID(id int) (*News, error) {
 	} else if news == nil {
 		return nil, nil
 	}
+
 	n := NewNewsListFromDB([]db.News{*news})
+
 	err = m.FillTags(n)
+
 	return &n[0], err
 }
 

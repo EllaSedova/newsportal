@@ -8,7 +8,6 @@ func NewsFromDB(in *db.News) *News {
 	if in == nil {
 		return nil
 	}
-
 	return &News{
 		News:     in,
 		Category: CategoryFromDb(in.Category),
@@ -19,6 +18,7 @@ func NewNewsListFromDB(in []db.News) (out []News) {
 	for i := range in {
 		out = append(out, *NewsFromDB(&in[i]))
 	}
+
 	return
 }
 

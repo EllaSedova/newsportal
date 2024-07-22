@@ -21,9 +21,11 @@ var nm *newsportal.Manager
 var ss *NewsService
 var e *echo.Echo
 
-const trueNews = `{"newsId":11,"title":"Новость1","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}
+const trueNews = `{"newsId":15,"title":"AНовость5","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"},{"tagId":3,"title":"заголовок3"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}
 `
-const wrongNews = `{}
+const trueNews2 = `[{"newsId":15,"title":"AНовость5","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"},{"tagId":3,"title":"заголовок3"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}]
+`
+const wrongNews = `null
 `
 
 func TestMain(m *testing.M) {
@@ -54,22 +56,21 @@ func TestNewsById(t *testing.T) {
 		return ss.NewsByID(c) // Замените на вашу функцию-обработчик
 	})
 	// создание нового HTTP запроса
-	req := httptest.NewRequest(http.MethodGet, "/news/11", nil)
-	rec := httptest.NewRecorder()
-
-	c := e.NewContext(req, rec)
-
-	// установка параметров
-	c.SetParamNames("id")
-	c.SetParamValues("11")
-
+	reqTrue := httptest.NewRequest(http.MethodGet, "/news/15", nil)
+	recTrue := httptest.NewRecorder()
+	// создание нового HTTP запроса
+	reqWrong := httptest.NewRequest(http.MethodGet, "/news/0", nil)
+	recWrong := httptest.NewRecorder()
 	// выполнение запроса
-	e.ServeHTTP(rec, req)
+	e.ServeHTTP(recTrue, reqTrue)
+	e.ServeHTTP(recWrong, reqWrong)
 
 	// проверки
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusOK, recTrue.Code)
+	assert.Equal(t, trueNews, recTrue.Body.String())
+	assert.Equal(t, http.StatusOK, recWrong.Code)
+	assert.Equal(t, wrongNews, recWrong.Body.String())
 
-	assert.Equal(t, trueNews, rec.Body.String())
 }
 
 func TestNewsWithFilters(t *testing.T) {
@@ -88,7 +89,7 @@ func TestNewsWithFilters(t *testing.T) {
 			args: args{
 				c: validEchoContext(),
 			},
-			want:    trueNews,
+			want:    trueNews2,
 			wantErr: assert.NoError,
 		},
 		{
@@ -112,7 +113,6 @@ func TestNewsWithFilters(t *testing.T) {
 			}
 			// вывод результата
 			got := rec.Body.String()
-			log.Printf("Test %s: got = %v\n", tt.name, got)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -123,10 +123,10 @@ func validEchoContext() echo.Context {
 	req := httptest.NewRequest(http.MethodGet, "/news", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-
 	// добавление параметров в запрос
 	q := req.URL.Query()
-	q.Add("categoryID", "3")
+	q.Add("categoryID", "1")
+	q.Add("tagID", "3")
 	req.URL.RawQuery = q.Encode()
 
 	return c
@@ -134,7 +134,6 @@ func validEchoContext() echo.Context {
 
 // создание echo.Context с невалидными фильтрами
 func invalidEchoContext() echo.Context {
-	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/news", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
