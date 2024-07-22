@@ -75,17 +75,18 @@ func TestMain(m *testing.M) {
 
 func TestGetNewsByID(t *testing.T) {
 	// get wrong news by id
-	wrongNews, err := nm.NewsByID(6)
+	wrongNews, err := nm.NewsByID(context.Background(), 6)
 	assert.Nil(t, wrongNews)
 
 	// get true news by id
-	actualNews, err := nm.NewsByID(15)
+	actualNews, err := nm.NewsByID(context.Background(), 15)
 	assert.NoError(t, err)
 	assert.Equal(t, realNews.Category, actualNews.Category)
 	assert.Equal(t, realNews.Tags, actualNews.Tags)
 	assert.Equal(t, realNews.PublishedAt, actualNews.PublishedAt)
 
 }
+
 func TestFillTags(t *testing.T) {
 	// Инициализация тестовых данных
 	newsListTrue := []News{
@@ -97,7 +98,7 @@ func TestFillTags(t *testing.T) {
 		{News: &db.News{ID: 2, TagIDs: []int{2, 13}}},
 	}
 	// Вызов метода
-	err := nm.FillTags(newsListTrue)
+	err := nm.FillTags(context.Background(), newsListTrue)
 	assert.NoError(t, err)
 
 	// Проверка результатов
@@ -105,7 +106,7 @@ func TestFillTags(t *testing.T) {
 		1: {{ID: 1, Title: "заголовок1", StatusID: 1}, {ID: 2, Title: "заголовок2", StatusID: 1}},
 		2: {{ID: 2, Title: "заголовок2", StatusID: 1}, {ID: 3, Title: "заголовок3", StatusID: 1}},
 	}
-	err = nm.FillTags(newsListWrong)
+	err = nm.FillTags(context.Background(), newsListWrong)
 	assert.NoError(t, err)
 	// Проверка результатов
 	wrongTags := map[int][]Tag{
@@ -126,7 +127,7 @@ func TestNews(t *testing.T) {
 	page := 1
 	pageSize := 10
 
-	newNewsList, err := nm.News(&categoryID, &tagID, &page, &pageSize)
+	newNewsList, err := nm.News(context.Background(), &categoryID, &tagID, &page, &pageSize)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -138,7 +139,19 @@ func TestNews(t *testing.T) {
 	assert.Equal(t, realNews.ID, newNewsList[0].ID)
 
 	wrongCategoryID := 17
-	newNewsList2, err := nm.News(&wrongCategoryID, &tagID, &page, &pageSize)
+	var emptyTagID int
+	newNewsList2, err := nm.News(context.Background(), &wrongCategoryID, &emptyTagID, &page, &pageSize)
 	assert.NoError(t, err)
 	assert.Nil(t, newNewsList2)
+}
+
+func TestTagsByIDs(t *testing.T) {
+	ids := []int{1, 2}
+	tags, err := nm.TagsByIDs(context.Background(), ids)
+	assert.NoError(t, err)
+	// Проверка результатов
+	trueTags := []Tag{{ID: 1, Title: "заголовок1", StatusID: 1}, {ID: 2, Title: "заголовок2", StatusID: 1}}
+
+	assert.Equal(t, trueTags, tags)
+
 }

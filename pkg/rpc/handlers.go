@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"context"
 	"github.com/vmkteam/zenrpc/v2"
 	"newsportal/pkg/newsportal"
 )
@@ -25,7 +26,8 @@ func NewNewsService(m *newsportal.Manager) *NewsService {
 
 // NewsByID получение новости по id
 func (rs NewsService) NewsByID(id int) (*News, error) {
-	news, err := rs.m.NewsByID(id)
+	ctx := context.Background()
+	news, err := rs.m.NewsByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +37,8 @@ func (rs NewsService) NewsByID(id int) (*News, error) {
 
 // Categories получение всех категорий
 func (rs NewsService) Categories() ([]Category, error) {
-	categories, err := rs.m.Categories()
+	ctx := context.Background()
+	categories, err := rs.m.Categories(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +48,8 @@ func (rs NewsService) Categories() ([]Category, error) {
 
 // Tags получение всех тегов
 func (rs NewsService) Tags() ([]Tag, error) {
-	tags, err := rs.m.Tags()
+	ctx := context.Background()
+	tags, err := rs.m.Tags(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +59,11 @@ func (rs NewsService) Tags() ([]Tag, error) {
 
 // NewsWithFilters получение новости с фильтрами
 func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int) ([]NewsSummary, error) {
+	ctx := context.Background()
 	var params FilterParams
 	params.Fill(categoryID, tagID, page, pageSize)
 
-	newsResponse, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	newsResponse, err := rs.m.News(ctx, params.CategoryID, params.TagID, params.Page, params.PageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +77,16 @@ func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int) ([
 }
 
 // NewsCountWithFilters получение количества новостей с фильтрами
-func (rs NewsService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int) (*int, error) {
+func (rs NewsService) NewsCountWithFilters(categoryID, tagID *int) (*int, error) {
+	ctx := context.Background()
 	var params FilterParams
-	params.Fill(categoryID, tagID, page, pageSize)
+	params.Fill(categoryID, tagID, nil, nil)
 
-	count, err := rs.m.NewsCount(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	count, err := rs.m.NewsCount(ctx, params.CategoryID, params.TagID)
 
 	return count, err
 }
+
 func (p *FilterParams) Fill(categoryID, tagID, page, pageSize *int) {
 	p.CategoryID = categoryID
 	p.TagID = tagID

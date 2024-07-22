@@ -295,16 +295,6 @@ func (NewsService) SMD() smd.ServiceInfo {
 						Optional: true,
 						Type:     smd.Integer,
 					},
-					{
-						Name:     "page",
-						Optional: true,
-						Type:     smd.Integer,
-					},
-					{
-						Name:     "pageSize",
-						Optional: true,
-						Type:     smd.Integer,
-					},
 				},
 				Returns: smd.JSONSchema{
 					Optional: true,
@@ -372,12 +362,10 @@ func (s NewsService) Invoke(ctx context.Context, method string, params json.RawM
 		var args = struct {
 			CategoryID *int `json:"categoryID"`
 			TagID      *int `json:"tagID"`
-			Page       *int `json:"page"`
-			PageSize   *int `json:"pageSize"`
 		}{}
 
 		if zenrpc.IsArray(params) {
-			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize"}, params); err != nil {
+			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID"}, params); err != nil {
 				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, "", err.Error())
 			}
 		}
@@ -388,7 +376,7 @@ func (s NewsService) Invoke(ctx context.Context, method string, params json.RawM
 			}
 		}
 
-		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize))
+		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID))
 
 	default:
 		resp = zenrpc.NewResponseError(nil, zenrpc.MethodNotFound, "", nil)

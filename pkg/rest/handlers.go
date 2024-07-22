@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
@@ -30,7 +31,7 @@ func (ss *NewsService) NewsByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "invalid ID")
 	}
 
-	news, err := ss.m.NewsByID(id)
+	news, err := ss.m.NewsByID(context.Background(), id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
@@ -47,7 +48,7 @@ func (ss *NewsService) NewsWithFilters(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
 
-	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	newsResponse, err := ss.m.News(context.Background(), params.CategoryID, params.TagID, params.Page, params.PageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -68,7 +69,7 @@ func (ss *NewsService) NewsCountWithFilters(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
 
-	count, err := ss.m.NewsCount(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	count, err := ss.m.NewsCount(context.Background(), params.CategoryID, params.TagID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -78,7 +79,7 @@ func (ss *NewsService) NewsCountWithFilters(c echo.Context) error {
 
 // Categories получение всех категорий
 func (ss *NewsService) Categories(c echo.Context) error {
-	categories, err := ss.m.Categories()
+	categories, err := ss.m.Categories(context.Background())
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
@@ -90,7 +91,7 @@ func (ss *NewsService) Categories(c echo.Context) error {
 
 // Tags получение всех тегов
 func (ss *NewsService) Tags(c echo.Context) error {
-	tags, err := ss.m.Tags()
+	tags, err := ss.m.Tags(context.Background())
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
