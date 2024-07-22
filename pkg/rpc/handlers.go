@@ -17,6 +17,7 @@ type FilterParams struct {
 	SortTitle  *bool
 }
 
+func ptrb(b bool) *bool { return &b }
 func NewRPCService(m *newsportal.Manager) *RPCService {
 	return &RPCService{
 		m: m,
@@ -55,9 +56,9 @@ func (rs RPCService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sor
 }
 
 // NewsCountWithFilters получение количества новостей с фильтрами
-func (rs RPCService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) (int, error) {
+func (rs RPCService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int) (int, error) {
 	var params FilterParams
-	params.Fill(categoryID, tagID, page, pageSize, sortTitle)
+	params.Fill(categoryID, tagID, page, pageSize, ptrb(false))
 	_, count, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, true)
 	return count, err
 }

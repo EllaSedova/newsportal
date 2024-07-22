@@ -30,6 +30,7 @@ func New(dbo *pg.DB) *App {
 	a.ss = server.NewServerService(a.nm)
 	a.rpcs = rpc.NewRPCService(a.nm)
 	a.rpc = rpc.New(a.nm)
+
 	return a
 }
 
@@ -43,7 +44,6 @@ func (a *App) Run() error {
 func (a *App) registerHandlers() {
 	a.e.Any("/v1/rpc/", zm.EchoHandler(zm.XRequestID(a.rpc)))
 	a.e.Any("/v1/rpc/doc/", echo.WrapHandler(http.HandlerFunc(zenrpc.SMDBoxHandler)))
-
 	a.e.GET("/news", a.ss.NewsWithFilters)
 	a.e.GET("/news/count", a.ss.NewsCountWithFilters)
 	a.e.GET("/news/:id", a.ss.NewsByID)

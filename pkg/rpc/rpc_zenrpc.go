@@ -310,11 +310,6 @@ func (RPCService) SMD() smd.ServiceInfo {
 						Optional: true,
 						Type:     smd.Integer,
 					},
-					{
-						Name:     "sortTitle",
-						Optional: true,
-						Type:     smd.Boolean,
-					},
 				},
 				Returns: smd.JSONSchema{
 					Type: smd.Integer,
@@ -380,15 +375,14 @@ func (s RPCService) Invoke(ctx context.Context, method string, params json.RawMe
 
 	case RPC.RPCService.NewsCountWithFilters:
 		var args = struct {
-			CategoryID *int  `json:"categoryID"`
-			TagID      *int  `json:"tagID"`
-			Page       *int  `json:"page"`
-			PageSize   *int  `json:"pageSize"`
-			SortTitle  *bool `json:"sortTitle"`
+			CategoryID *int `json:"categoryID"`
+			TagID      *int `json:"tagID"`
+			Page       *int `json:"page"`
+			PageSize   *int `json:"pageSize"`
 		}{}
 
 		if zenrpc.IsArray(params) {
-			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize", "sortTitle"}, params); err != nil {
+			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize"}, params); err != nil {
 				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, "", err.Error())
 			}
 		}
@@ -399,7 +393,7 @@ func (s RPCService) Invoke(ctx context.Context, method string, params json.RawMe
 			}
 		}
 
-		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle))
+		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize))
 
 	default:
 		resp = zenrpc.NewResponseError(nil, zenrpc.MethodNotFound, "", nil)

@@ -8,6 +8,8 @@ import (
 	"newsportal/pkg/newsportal"
 )
 
+func ptrb(b bool) *bool { return &b }
+
 type FilterParams struct {
 	CategoryID *int  `query:"categoryID"`
 	TagID      *int  `query:"tagID"`
@@ -64,7 +66,7 @@ func (ss *ServerService) NewsCountWithFilters(c echo.Context) error {
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
-	_, count, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, true)
+	_, count, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, ptrb(false), true)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}

@@ -3,6 +3,8 @@ package rpc
 import (
 	zm "github.com/vmkteam/zenrpc-middleware"
 	"github.com/vmkteam/zenrpc/v2"
+	"log"
+	"os"
 
 	"newsportal/pkg/newsportal"
 )
@@ -21,13 +23,10 @@ func New(m *newsportal.Manager) zenrpc.Server {
 	})
 
 	rpc.Use(
-		//zm.WithDevel(isDevel),
 		zm.WithHeaders(),
 		zm.WithSentry(zm.DefaultServerName),
 		zm.WithNoCancelContext(),
-		//zm.WithMetrics(zm.DefaultServerName),
-		//zm.WithTiming(isDevel, allowDebugFn()),
-		//zm.WithSQLLogger(dbo.DB, isDevel, allowDebugFn(), allowDebugFn()),
+		zenrpc.Logger(log.New(os.Stderr, "", log.LstdFlags)),
 	)
 
 	// services
