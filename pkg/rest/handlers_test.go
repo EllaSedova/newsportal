@@ -23,7 +23,7 @@ var e *echo.Echo
 
 const trueNews = `{"newsId":15,"title":"AНовость5","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"},{"tagId":3,"title":"заголовок3"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}
 `
-const trueNews2 = `[{"newsId":15,"title":"AНовость5","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"},{"tagId":3,"title":"заголовок3"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}]
+const trueNews2 = `[{"newsId":15,"title":"AНовость5","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"},{"tagId":3,"title":"заголовок3"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}]
 `
 const wrongNews = `null
 `
