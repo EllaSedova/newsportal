@@ -2,8 +2,6 @@ package db
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/go-pg/pg/v10"
 )
 
@@ -48,8 +46,6 @@ func (qb *QueryBuilder) Apply(query *pg.Query) *pg.Query {
 	}
 	for _, newFilter := range qb.NewFilters {
 		query.Where(fmt.Sprintf(`? = ANY (t."%s")`, newFilter.Field), newFilter.Value)
-		log.Println(newFilter.Field)
-		log.Println(query)
 	}
 	for _, sort := range qb.Sorts {
 		order := "ASC"

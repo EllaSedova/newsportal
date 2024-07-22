@@ -13,12 +13,12 @@ const defaultPageSize = 10
 
 func ptri(r int) *int { return &r }
 
-type TagMap map[int]Tag
-
 type NewsResponse struct {
 	News  []News
 	Count *int
 }
+
+type TagMap map[int]Tag
 
 func (t *TagMap) Fill(tagIDMap map[int]struct{}, m *Manager) error {
 
@@ -31,12 +31,10 @@ func (t *TagMap) Fill(tagIDMap map[int]struct{}, m *Manager) error {
 	tags, err := m.TagsByIDs(uniqueTagIDs)
 
 	// создаём карту тегов
-	tagMap := TagMap{}
 	for _, tag := range tags {
-		tagMap[tag.ID] = tag
+		(*t)[tag.ID] = tag
 	}
 
-	t = &tagMap
 	return err
 }
 
@@ -55,8 +53,9 @@ func (m Manager) NewsByID(id int) (*News, error) {
 		tagIDMap[tagID] = struct{}{}
 	}
 	// заполняем карту уникальных tagId
-	var tagMap TagMap
+	tagMap := make(TagMap)
 	err = tagMap.Fill(tagIDMap, &m)
+
 	var newsTags []Tag
 	for _, tagID := range news.TagIDs {
 		newsTags = append(newsTags, tagMap[tagID])
@@ -111,7 +110,7 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle, countRe
 			}
 		}
 		// заполняем карту уникальных tagId
-		var tagMap TagMap
+		tagMap := make(TagMap)
 		err = tagMap.Fill(tagIDMap, &m)
 		var newNewsList []News
 		for i, summary := range news {
