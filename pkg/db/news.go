@@ -7,7 +7,7 @@ import (
 
 type NewsRepo struct {
 	*pg.DB
-	QB QueryBuilder
+	qb QueryBuilder
 }
 
 const (
@@ -17,7 +17,16 @@ const (
 )
 
 func NewNewsRepo(db *pg.DB) NewsRepo {
-	return NewsRepo{DB: db, QB: *NewQueryBuilder()}
+	return NewsRepo{DB: db, qb: *NewQueryBuilder()}
+}
+
+func AddFilter(categoryID, tagID *int, qb *QueryBuilder) {
+	if categoryID != nil {
+		qb.AddFilterEqual(Columns.News.CategoryID, *categoryID)
+	}
+	if tagID != nil {
+		qb.AddFilterAny(Columns.News.TagIDs, *tagID)
+	}
 }
 
 // NewsByID возвращает News по id из бд
@@ -31,13 +40,13 @@ func (nr *NewsRepo) NewsByID(id int) (*News, error) {
 }
 
 // NewsWithPagination возвращает новости с пагинацией и фильтрами
-func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]News, error) {
+func (nr *NewsRepo) NewsWithPagination(page, pageSize int, categoryID, tagID *int) ([]News, error) {
 	var news []News
+	qb := nr.qb
+	AddFilter(categoryID, tagID, &qb)
 	offset := (page - 1) * pageSize
 	query := nr.Model(&news)
-	if qb != nil {
-		query = qb.Apply(query)
-	}
+	query = qb.Apply(query)
 	err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
 		Offset(offset).
 		Limit(pageSize).
@@ -49,14 +58,12 @@ func (nr *NewsRepo) NewsWithPagination(page, pageSize int, qb *QueryBuilder) ([]
 }
 
 // NewsCount возвращает количество новостей с пагинацией и фильтрами
-func (nr *NewsRepo) NewsCount(page, pageSize int, qb *QueryBuilder) (int, error) {
-	//var count int
+func (nr *NewsRepo) NewsCount(page, pageSize int, categoryID, tagID *int) (int, error) {
+	qb := nr.qb
+	AddFilter(categoryID, tagID, &qb)
 	offset := (page - 1) * pageSize
 	query := nr.Model((*News)(nil))
-	if qb != nil {
-		query = qb.Apply(query)
-	}
-
+	query = qb.Apply(query)
 	count, err := query.Relation(`Category`).Where(`t."statusId" != ?`, StatusDeleted).
 		Offset(offset).
 		Limit(pageSize).

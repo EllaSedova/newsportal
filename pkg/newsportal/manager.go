@@ -9,7 +9,7 @@ type Manager struct {
 }
 
 const defaultPage = 1
-const defaultPageSize = 10
+const defaultPageSize = 2
 
 func ptri(r int) *int { return &r }
 
@@ -19,6 +19,22 @@ type NewsResponse struct {
 }
 
 type TagMap map[int]Tag
+
+func NewManager(db db.NewsRepo) *Manager {
+	return &Manager{nr: db}
+}
+func CheckPagination(page, pageSize **int) {
+	if *page == nil {
+		*page = ptri(defaultPage)
+	} else if **page <= 0 {
+		*page = ptri(defaultPage)
+	}
+	if *pageSize == nil {
+		*pageSize = ptri(defaultPageSize)
+	} else if **pageSize <= 0 {
+		*pageSize = ptri(defaultPageSize)
+	}
+}
 
 func (t *TagMap) Fill(tagIDMap map[int]struct{}, m *Manager) error {
 
@@ -38,8 +54,27 @@ func (t *TagMap) Fill(tagIDMap map[int]struct{}, m *Manager) error {
 	return err
 }
 
-func NewManager(db db.NewsRepo) *Manager {
-	return &Manager{nr: db}
+func (m Manager) FillTags(news []db.News) ([]News, error) {
+	// собираем все уникальные tagID
+	tagIDMap := make(map[int]struct{})
+	for _, summary := range news {
+		for _, tagId := range summary.TagIDs {
+			tagIDMap[tagId] = struct{}{}
+		}
+	}
+	// заполняем карту уникальных tagId
+	tagMap := make(TagMap)
+	err := tagMap.Fill(tagIDMap, &m)
+	var newNewsList []News
+	for i, summary := range news {
+		var newsTags []Tag
+		for _, tagId := range summary.TagIDs {
+			newsTags = append(newsTags, tagMap[tagId])
+		}
+		newNews := NewsFromDb(&news[i], newsTags)
+		newNewsList = append(newNewsList, *newNews)
+	}
+	return newNewsList, err
 }
 
 func (m Manager) NewsByID(id int) (*News, error) {
@@ -47,20 +82,8 @@ func (m Manager) NewsByID(id int) (*News, error) {
 	if err != nil || news == nil {
 		return nil, err
 	}
-	// собираем все уникальные tagID
-	tagIDMap := make(map[int]struct{})
-	for _, tagID := range news.TagIDs {
-		tagIDMap[tagID] = struct{}{}
-	}
-	// заполняем карту уникальных tagId
-	tagMap := make(TagMap)
-	err = tagMap.Fill(tagIDMap, &m)
-
-	var newsTags []Tag
-	for _, tagID := range news.TagIDs {
-		newsTags = append(newsTags, tagMap[tagID])
-	}
-	return NewsFromDb(news, newsTags), err
+	tags, err := m.FillTags([]db.News{*news})
+	return &tags[0], err
 }
 
 func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
@@ -71,73 +94,21 @@ func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
 	return nil, nil
 }
 
-func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle, countRequest *bool) (NewsResponse, error) {
-	qb := m.nr.QB
+func (m Manager) News(categoryID, tagID, page, pageSize *int) ([]News, error) {
+	CheckPagination(&page, &pageSize)
+	news, err := m.nr.NewsWithPagination(*page, *pageSize, categoryID, tagID)
 
-	if categoryID != nil {
-		qb.AddFilterEqual(db.Columns.News.CategoryID, *categoryID)
-	}
-	if tagID != nil {
-		qb.AddFilterAny(db.Columns.News.TagIDs, *tagID)
-	}
-	if sortTitle != nil && *sortTitle {
-		qb.AddSort(db.Columns.News.Title, true)
-	}
-	if page == nil {
-		page = ptri(defaultPage)
-	} else if *page <= 0 {
-		page = ptri(defaultPage)
-	}
-	if pageSize == nil {
-		pageSize = ptri(defaultPageSize)
-	} else if *pageSize <= 0 {
-		pageSize = ptri(defaultPageSize)
-	}
-	if sortTitle != nil && *sortTitle {
-		qb.AddSort(db.Columns.News.Title, true)
-	}
-	if countRequest != nil && *countRequest {
-		count, err := m.Count(*page, *pageSize, &qb)
-		return NewsResponse{News: nil, Count: &count}, err
-	}
-	news, err := m.ByPage(*page, *pageSize, &qb)
 	if news != nil {
-		// собираем все уникальные tagID
-		tagIDMap := make(map[int]struct{})
-		for _, summary := range news {
-			for _, tagId := range summary.TagIDs {
-				tagIDMap[tagId] = struct{}{}
-			}
-		}
-		// заполняем карту уникальных tagId
-		tagMap := make(TagMap)
-		err = tagMap.Fill(tagIDMap, &m)
-		var newNewsList []News
-		for i, summary := range news {
-			var newsTags []Tag
-			for _, tagId := range summary.TagIDs {
-				newsTags = append(newsTags, tagMap[tagId])
-			}
-			newNews := NewsFromDb(&news[i], newsTags)
-			newNewsList = append(newNewsList, *newNews)
-		}
-		return NewsResponse{News: newNewsList, Count: nil}, err
+		newsList, err := m.FillTags(news)
+		return newsList, err
 	}
-	return NewsResponse{News: nil, Count: nil}, err
+	return nil, err
 }
 
-// ByPage возвращает все новости с определённой страницы
-func (m Manager) ByPage(page, pageSize int, qb *db.QueryBuilder) ([]db.News, error) {
-	// get news with pagination
-	news, err := m.nr.NewsWithPagination(page, pageSize, qb)
-	return news, err
-}
-
-// Count возвращает количество новостей с определённой страницы
-func (m Manager) Count(page, pageSize int, qb *db.QueryBuilder) (int, error) {
-	// get news with pagination
-	count, err := m.nr.NewsCount(page, pageSize, qb)
-	return count, err
+func (m Manager) NewsCount(categoryID, tagID, page, pageSize *int) (*int, error) {
+	CheckPagination(&page, &pageSize)
+	count, err := m.nr.NewsCount(*page, *pageSize, categoryID, tagID)
+	return &count, err
 }
 
 // Categories возвращает все категории

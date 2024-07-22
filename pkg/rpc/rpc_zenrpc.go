@@ -11,13 +11,14 @@ import (
 )
 
 var RPC = struct {
-	NewsService struct{ NewsByID, Categories, Tags, NewsWithFilters string }
+	NewsService struct{ NewsByID, Categories, Tags, NewsWithFilters, NewsCountWithFilters string }
 }{
-	NewsService: struct{ NewsByID, Categories, Tags, NewsWithFilters string }{
-		NewsByID:        "newsbyid",
-		Categories:      "categories",
-		Tags:            "tags",
-		NewsWithFilters: "newswithfilters",
+	NewsService: struct{ NewsByID, Categories, Tags, NewsWithFilters, NewsCountWithFilters string }{
+		NewsByID:             "newsbyid",
+		Categories:           "categories",
+		Tags:                 "tags",
+		NewsWithFilters:      "newswithfilters",
+		NewsCountWithFilters: "newscountwithfilters",
 	},
 }
 
@@ -198,33 +199,12 @@ func (NewsService) SMD() smd.ServiceInfo {
 						Optional: true,
 						Type:     smd.Integer,
 					},
-					{
-						Name:     "sortTitle",
-						Optional: true,
-						Type:     smd.Boolean,
-					},
-					{
-						Name:     "count",
-						Optional: true,
-						Type:     smd.Boolean,
-					},
 				},
 				Returns: smd.JSONSchema{
-					Type:     smd.Object,
-					TypeName: "NewsResponse",
-					Properties: smd.PropertyList{
-						{
-							Name: "News",
-							Type: smd.Array,
-							Items: map[string]string{
-								"$ref": "#/definitions/NewsSummary",
-							},
-						},
-						{
-							Name:     "count",
-							Optional: true,
-							Type:     smd.Integer,
-						},
+					Type:     smd.Array,
+					TypeName: "[]NewsSummary",
+					Items: map[string]string{
+						"$ref": "#/definitions/NewsSummary",
 					},
 					Definitions: map[string]smd.Definition{
 						"NewsSummary": {
@@ -302,6 +282,35 @@ func (NewsService) SMD() smd.ServiceInfo {
 					},
 				},
 			},
+			"NewsCountWithFilters": {
+				Description: `NewsCountWithFilters получение количества новостей с фильтрами`,
+				Parameters: []smd.JSONSchema{
+					{
+						Name:     "categoryID",
+						Optional: true,
+						Type:     smd.Integer,
+					},
+					{
+						Name:     "tagID",
+						Optional: true,
+						Type:     smd.Integer,
+					},
+					{
+						Name:     "page",
+						Optional: true,
+						Type:     smd.Integer,
+					},
+					{
+						Name:     "pageSize",
+						Optional: true,
+						Type:     smd.Integer,
+					},
+				},
+				Returns: smd.JSONSchema{
+					Optional: true,
+					Type:     smd.Integer,
+				},
+			},
 		},
 	}
 }
@@ -339,16 +348,14 @@ func (s NewsService) Invoke(ctx context.Context, method string, params json.RawM
 
 	case RPC.NewsService.NewsWithFilters:
 		var args = struct {
-			CategoryID *int  `json:"categoryID"`
-			TagID      *int  `json:"tagID"`
-			Page       *int  `json:"page"`
-			PageSize   *int  `json:"pageSize"`
-			SortTitle  *bool `json:"sortTitle"`
-			Count      *bool `json:"count"`
+			CategoryID *int `json:"categoryID"`
+			TagID      *int `json:"tagID"`
+			Page       *int `json:"page"`
+			PageSize   *int `json:"pageSize"`
 		}{}
 
 		if zenrpc.IsArray(params) {
-			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize", "sortTitle", "count"}, params); err != nil {
+			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize"}, params); err != nil {
 				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, "", err.Error())
 			}
 		}
@@ -359,7 +366,29 @@ func (s NewsService) Invoke(ctx context.Context, method string, params json.RawM
 			}
 		}
 
-		resp.Set(s.NewsWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize, args.SortTitle, args.Count))
+		resp.Set(s.NewsWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize))
+
+	case RPC.NewsService.NewsCountWithFilters:
+		var args = struct {
+			CategoryID *int `json:"categoryID"`
+			TagID      *int `json:"tagID"`
+			Page       *int `json:"page"`
+			PageSize   *int `json:"pageSize"`
+		}{}
+
+		if zenrpc.IsArray(params) {
+			if params, err = zenrpc.ConvertToObject([]string{"categoryID", "tagID", "page", "pageSize"}, params); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, "", err.Error())
+			}
+		}
+
+		if len(params) > 0 {
+			if err := json.Unmarshal(params, &args); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, "", err.Error())
+			}
+		}
+
+		resp.Set(s.NewsCountWithFilters(args.CategoryID, args.TagID, args.Page, args.PageSize))
 
 	default:
 		resp = zenrpc.NewResponseError(nil, zenrpc.MethodNotFound, "", nil)

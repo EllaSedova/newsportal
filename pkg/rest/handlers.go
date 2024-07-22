@@ -8,15 +8,11 @@ import (
 	"newsportal/pkg/newsportal"
 )
 
-func ptrb(b bool) *bool { return &b }
-
 type FilterParams struct {
-	CategoryID *int  `query:"categoryID"`
-	TagID      *int  `query:"tagID"`
-	Page       *int  `query:"page"`
-	PageSize   *int  `query:"pageSize"`
-	SortTitle  *bool `query:"sortTitle"`
-	Count      *bool `query:"count"`
+	CategoryID *int `query:"categoryID"`
+	TagID      *int `query:"tagID"`
+	Page       *int `query:"page"`
+	PageSize   *int `query:"pageSize"`
 }
 
 type NewsService struct {
@@ -47,22 +43,32 @@ func (ss *NewsService) NewsWithFilters(c echo.Context) error {
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
-	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, params.Count)
+	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var newNewsList []NewsSummary
-	for _, summary := range newsResponse.News {
+	for _, summary := range newsResponse {
 		newNews := NewsSummaryFromManager(&summary)
 		newNewsList = append(newNewsList, *newNews)
 	}
 
-	return c.JSON(http.StatusOK, NewsResponse{
-		News:  newNewsList,
-		Count: newsResponse.Count,
-	})
+	return c.JSON(http.StatusOK, newNewsList)
+}
+
+// NewsCountWithFilters получение количества новостей с фильтрами
+func (ss *NewsService) NewsCountWithFilters(c echo.Context) error {
+	var params FilterParams
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, "invalid query parameters")
+	}
+	count, err := ss.m.NewsCount(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, count)
 }
 
 // Categories получение всех категорий

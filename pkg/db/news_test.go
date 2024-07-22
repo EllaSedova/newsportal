@@ -89,18 +89,13 @@ func TestNewsByID(t *testing.T) {
 }
 
 func TestNewsWithPagination(t *testing.T) {
-	qb := &nr.QB
 	page := 3
 	pageSize := 2
 	categoryID := 3
 	tagID := 1
-	sortTitle := false
-	qb.AddFilterEqual(`t."categoryId"`, categoryID)
-	qb.AddFilterAny(`ANY (t."tagIds")`, tagID)
-	qb.AddSort("t.title", sortTitle)
 
 	// get news by tag
-	actualNews, err := nr.NewsWithPagination(page, pageSize, qb)
+	actualNews, err := nr.NewsWithPagination(page, pageSize, &categoryID, &tagID)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(actualNews), "there is no news with this tagId")
 }
@@ -119,9 +114,10 @@ func TestNewsRepo_NewsWithPagination(t *testing.T) {
 		QB QueryBuilder
 	}
 	type args struct {
-		page     int
-		pageSize int
-		qb       *QueryBuilder
+		page       int
+		pageSize   int
+		categoryId *int
+		tagId      *int
 	}
 	tests := []struct {
 		name    string
@@ -133,9 +129,10 @@ func TestNewsRepo_NewsWithPagination(t *testing.T) {
 		{
 			name: "invalid filters",
 			args: args{
-				page:     2,
-				pageSize: -2,
-				qb:       &nr.QB,
+				page:       2,
+				pageSize:   -2,
+				categoryId: nil,
+				tagId:      nil,
 			},
 			want:    nil,
 			wantErr: assert.Error,
@@ -144,11 +141,11 @@ func TestNewsRepo_NewsWithPagination(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//tt.args.qb.AddFilterEqual(`"categoryID"`, 3)
-			got, err := nr.NewsWithPagination(tt.args.page, tt.args.pageSize, tt.args.qb)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewsWithPagination(%v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.qb)) {
+			got, err := nr.NewsWithPagination(tt.args.page, tt.args.pageSize, tt.args.categoryId, tt.args.tagId)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewsWithPagination(%v, %v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.categoryId, tt.args.tagId)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "NewsWithPagination(%v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.qb)
+			assert.Equalf(t, tt.want, got, "NewsWithPagination(%v, %v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.categoryId, tt.args.tagId)
 		})
 	}
 }
