@@ -29,11 +29,14 @@ func (ss *NewsService) NewsByID(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid ID")
 	}
+
 	news, err := ss.m.NewsByID(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
+
 	newNews := NewsFromManager(news)
+
 	return c.JSON(http.StatusOK, newNews)
 }
 
@@ -43,8 +46,8 @@ func (ss *NewsService) NewsWithFilters(c echo.Context) error {
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
-	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
 
+	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -64,10 +67,12 @@ func (ss *NewsService) NewsCountWithFilters(c echo.Context) error {
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
+
 	count, err := ss.m.NewsCount(params.CategoryID, params.TagID, params.Page, params.PageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+
 	return c.JSON(http.StatusOK, count)
 }
 
@@ -77,7 +82,9 @@ func (ss *NewsService) Categories(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
+
 	newCategories := CategoriesFromManager(categories)
+
 	return c.JSON(http.StatusOK, newCategories)
 }
 
@@ -87,6 +94,8 @@ func (ss *NewsService) Tags(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
 	}
+
 	newTags := TagsFromManager(tags)
+
 	return c.JSON(http.StatusOK, newTags)
 }

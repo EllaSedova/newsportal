@@ -25,6 +25,14 @@ func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{}
 }
 
+func (qb *QueryBuilder) AddFilter(categoryID, tagID *int) {
+	if categoryID != nil {
+		qb.AddFilterEqual(Columns.News.CategoryID, *categoryID)
+	}
+	if tagID != nil {
+		qb.AddFilterAny(Columns.News.TagIDs, *tagID)
+	}
+}
 func (qb *QueryBuilder) AddFilterEqual(field string, value interface{}) *QueryBuilder {
 	qb.Filters = append(qb.Filters, Filter{Field: field, Value: value})
 	return qb

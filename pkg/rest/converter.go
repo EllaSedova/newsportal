@@ -4,48 +4,50 @@ import (
 	"newsportal/pkg/newsportal"
 )
 
-func NewsFromManager(in *newsportal.News) (out *News) {
-	if in != nil {
-		out = &News{
-			ID:          in.ID,
-			Title:       in.Title,
-			Foreword:    in.Foreword,
-			Content:     in.Content,
-			Author:      in.Author,
-			PublishedAt: in.PublishedAt,
-			Tags:        TagsFromManager(in.Tags),
-			Category:    *CategoryFromManager(in.Category),
-		}
-
+func NewsFromManager(in *newsportal.News) *News {
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &News{
+		ID:          in.ID,
+		Title:       in.Title,
+		Foreword:    in.Foreword,
+		Content:     in.Content,
+		Author:      in.Author,
+		PublishedAt: in.PublishedAt,
+		Tags:        TagsFromManager(in.Tags),
+		Category:    *CategoryFromManager(in.Category),
+	}
 }
 
-func NewsSummaryFromManager(in *newsportal.News) (out *NewsSummary) {
-	if in != nil {
-		out = &NewsSummary{
-			ID:          in.ID,
-			Title:       in.Title,
-			Foreword:    in.Foreword,
-			Author:      in.Author,
-			PublishedAt: in.PublishedAt,
-			Tags:        TagsFromManager(in.Tags),
-			Category:    *CategoryFromManager(in.Category),
-		}
+func NewsSummaryFromManager(in *newsportal.News) *NewsSummary {
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &NewsSummary{
+		ID:          in.ID,
+		Title:       in.Title,
+		Foreword:    in.Foreword,
+		Author:      in.Author,
+		PublishedAt: in.PublishedAt,
+		Tags:        TagsFromManager(in.Tags),
+		Category:    *CategoryFromManager(in.Category),
+	}
 }
 
-func CategoryFromManager(in *newsportal.Category) (out *Category) {
-	if in != nil {
-		out = &Category{
-			ID:          in.ID,
-			Title:       in.Title,
-			OrderNumber: in.OrderNumber,
-			Alias:       in.Alias,
-		}
+func CategoryFromManager(in *newsportal.Category) *Category {
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &Category{
+		ID:          in.ID,
+		Title:       in.Title,
+		OrderNumber: in.OrderNumber,
+		Alias:       in.Alias,
+	}
 }
 
 func CategoriesFromManager(in []newsportal.Category) (out []Category) {
@@ -57,13 +59,14 @@ func CategoriesFromManager(in []newsportal.Category) (out []Category) {
 }
 
 func TagFromManager(in *newsportal.Tag) (out *Tag) {
-	if in != nil {
-		out = &Tag{
-			ID:    in.ID,
-			Title: in.Title,
-		}
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &Tag{
+		ID:    in.ID,
+		Title: in.Title,
+	}
 }
 
 func TagsFromManager(in []newsportal.Tag) (out []Tag) {

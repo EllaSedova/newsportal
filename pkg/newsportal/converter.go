@@ -4,28 +4,29 @@ import (
 	"newsportal/pkg/db"
 )
 
-func NewsFromDb(in *db.News, tags []Tag) (out *News) {
-	if in != nil {
-		out = &News{
-			News: in,
-		}
-		out.Category = CategoryFromDb(in.Category)
-		out.Tags = tags
+func NewsFromDB(in *db.News, tags []Tag) *News {
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &News{
+		News:     in,
+		Category: CategoryFromDb(in.Category),
+		Tags:     tags,
+	}
 }
 
-func CategoryFromDb(in *db.Category) (out *Category) {
-	if in != nil {
-		out = &Category{
-			ID:          in.ID,
-			Title:       in.Title,
-			OrderNumber: in.OrderNumber,
-			Alias:       in.Alias,
-			StatusID:    in.StatusID,
-		}
+func CategoryFromDb(in *db.Category) *Category {
+	if in == nil {
+		return nil
 	}
-	return
+	return &Category{
+		ID:          in.ID,
+		Title:       in.Title,
+		OrderNumber: in.OrderNumber,
+		Alias:       in.Alias,
+		StatusID:    in.StatusID,
+	}
 }
 
 func CategoriesFromDb(in []db.Category) (out []Category) {
@@ -36,15 +37,16 @@ func CategoriesFromDb(in []db.Category) (out []Category) {
 	return
 }
 
-func TagFromDb(in *db.Tag) (out *Tag) {
-	if in != nil {
-		out = &Tag{
-			ID:       in.ID,
-			Title:    in.Title,
-			StatusID: in.StatusID,
-		}
+func TagFromDb(in *db.Tag) *Tag {
+	if in == nil {
+		return nil
 	}
-	return
+
+	return &Tag{
+		ID:       in.ID,
+		Title:    in.Title,
+		StatusID: in.StatusID,
+	}
 }
 
 func TagsFromDb(in []db.Tag) (out []Tag) {

@@ -9,6 +9,7 @@ type NewsService struct {
 	zenrpc.Service
 	m *newsportal.Manager
 }
+
 type FilterParams struct {
 	CategoryID *int
 	TagID      *int
@@ -44,7 +45,9 @@ func (rs NewsService) Tags() ([]Tag, error) {
 func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int) ([]NewsSummary, error) {
 	var params FilterParams
 	params.Fill(categoryID, tagID, page, pageSize)
+
 	newsResponse, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
+
 	var newNewsList []NewsSummary
 	for _, summary := range newsResponse {
 		newNews := NewsSummaryFromManager(&summary)
@@ -57,7 +60,9 @@ func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int) ([
 func (rs NewsService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int) (*int, error) {
 	var params FilterParams
 	params.Fill(categoryID, tagID, page, pageSize)
+
 	count, err := rs.m.NewsCount(params.CategoryID, params.TagID, params.Page, params.PageSize)
+
 	return count, err
 }
 func (p *FilterParams) Fill(categoryID, tagID, page, pageSize *int) {
