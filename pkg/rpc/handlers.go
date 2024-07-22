@@ -26,18 +26,30 @@ func NewNewsService(m *newsportal.Manager) *NewsService {
 // NewsByID получение новости по id
 func (rs NewsService) NewsByID(id int) (*News, error) {
 	news, err := rs.m.NewsByID(id)
-	return NewsFromManager(news), err
+	if err != nil {
+		return nil, err
+	}
+
+	return NewsFromManager(news), nil
 }
 
 // Categories получение всех категорий
 func (rs NewsService) Categories() ([]Category, error) {
 	categories, err := rs.m.Categories()
+	if err != nil {
+		return nil, err
+	}
+
 	return CategoriesFromManager(categories), err
 }
 
 // Tags получение всех тегов
 func (rs NewsService) Tags() ([]Tag, error) {
 	tags, err := rs.m.Tags()
+	if err != nil {
+		return nil, err
+	}
+
 	return TagsFromManager(tags), err
 }
 
@@ -47,13 +59,16 @@ func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int) ([
 	params.Fill(categoryID, tagID, page, pageSize)
 
 	newsResponse, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize)
+	if err != nil {
+		return nil, err
+	}
 
 	var newNewsList []NewsSummary
 	for _, summary := range newsResponse {
 		newNews := NewsSummaryFromManager(&summary)
 		newNewsList = append(newNewsList, *newNews)
 	}
-	return newNewsList, err
+	return newNewsList, nil
 }
 
 // NewsCountWithFilters получение количества новостей с фильтрами

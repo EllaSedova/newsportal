@@ -25,6 +25,7 @@ func CheckPagination(page, pageSize **int) {
 	} else if **page <= 0 {
 		*page = ptri(defaultPage)
 	}
+
 	if *pageSize == nil {
 		*pageSize = ptri(defaultPageSize)
 	} else if **pageSize <= 0 {
@@ -90,16 +91,6 @@ func (m Manager) NewsByID(id int) (*News, error) {
 	return &newNews[0], err
 }
 
-func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	tags, err := m.nr.TagsByIDs(ids)
-
-	return TagsFromDb(tags), err
-}
-
 func (m Manager) News(categoryID, tagID, page, pageSize *int) ([]News, error) {
 	CheckPagination(&page, &pageSize)
 	news, err := m.nr.NewsWithPagination(*page, *pageSize, categoryID, tagID)
@@ -128,6 +119,16 @@ func (m Manager) Categories() ([]Category, error) {
 	categories, err := m.nr.CategoriesWithSort()
 
 	return CategoriesFromDb(categories), err
+}
+
+func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	tags, err := m.nr.TagsByIDs(ids)
+
+	return TagsFromDb(tags), err
 }
 
 // Tags возвращает все теги
