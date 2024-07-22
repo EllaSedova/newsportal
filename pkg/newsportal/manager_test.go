@@ -61,7 +61,7 @@ func TestGetNewsByID(t *testing.T) {
 	//wrongNews, err := nm.NewsByID(6)
 	//assert.Nil(t, wrongNews)
 	// get true news by id
-	actualNews, err := nm.NewsByID(11)
+	actualNews, err := nm.NewsByID(15)
 	assert.NoError(t, err)
 	assert.Equal(t, realNews.Category, actualNews.Category)
 }

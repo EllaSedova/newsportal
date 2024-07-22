@@ -2,6 +2,11 @@ package rpc
 
 import "time"
 
+type NewsResponse struct {
+	News  []NewsSummary
+	Count *int `json:"count"`
+}
+
 type NewsSummary struct {
 	ID          int       `json:"newsId"`
 	Title       string    `json:"title"`

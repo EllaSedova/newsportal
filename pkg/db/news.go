@@ -3,7 +3,6 @@ package db
 import (
 	"errors"
 	"github.com/go-pg/pg/v10"
-	"log"
 )
 
 type NewsRepo struct {
@@ -82,7 +81,6 @@ func (nr *NewsRepo) CategoryByID(id int) (*Category, error) {
 func (nr *NewsRepo) TagByID(id int) (*Tag, error) {
 	tag := &Tag{ID: id}
 	err := nr.Model(tag).Where(`"statusId" != ?`, StatusDeleted).WherePK().Select()
-	log.Println("vrrgr", err)
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	}

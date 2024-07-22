@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/go-pg/pg/v10"
 )
@@ -26,12 +27,12 @@ func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{}
 }
 
-func (qb *QueryBuilder) AddFilter(field string, value interface{}) *QueryBuilder {
+func (qb *QueryBuilder) AddFilterEqual(field string, value interface{}) *QueryBuilder {
 	qb.Filters = append(qb.Filters, Filter{Field: field, Value: value})
 	return qb
 }
 
-func (qb *QueryBuilder) AddNewFilter(field string, value interface{}) *QueryBuilder {
+func (qb *QueryBuilder) AddFilterAny(field string, value interface{}) *QueryBuilder {
 	qb.NewFilters = append(qb.NewFilters, Filter{Field: field, Value: value})
 	return qb
 }
@@ -43,17 +44,19 @@ func (qb *QueryBuilder) AddSort(field string, ascending bool) *QueryBuilder {
 
 func (qb *QueryBuilder) Apply(query *pg.Query) *pg.Query {
 	for _, filter := range qb.Filters {
-		query.Where(fmt.Sprintf("%s = ?", filter.Field), filter.Value)
+		query.Where(fmt.Sprintf(`t."%s" = ?`, filter.Field), filter.Value)
 	}
 	for _, newFilter := range qb.NewFilters {
-		query.Where(fmt.Sprintf("? = %s", newFilter.Field), newFilter.Value)
+		query.Where(fmt.Sprintf(`? = ANY (t."%s")`, newFilter.Field), newFilter.Value)
+		log.Println(newFilter.Field)
+		log.Println(query)
 	}
 	for _, sort := range qb.Sorts {
 		order := "ASC"
 		if !sort.Ascending {
 			order = "DESC"
 		}
-		query.Order(fmt.Sprintf("%s %s", sort.Field, order))
+		query.Order(fmt.Sprintf(`t.%s %s`, sort.Field, order))
 	}
 	return query
 }

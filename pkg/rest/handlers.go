@@ -1,4 +1,4 @@
-package server
+package rest
 
 import (
 	"github.com/labstack/echo/v4"
@@ -16,18 +16,19 @@ type FilterParams struct {
 	Page       *int  `query:"page"`
 	PageSize   *int  `query:"pageSize"`
 	SortTitle  *bool `query:"sortTitle"`
+	Count      *bool `query:"count"`
 }
 
-type ServerService struct {
+type NewsService struct {
 	m *newsportal.Manager
 }
 
-func NewServerService(m *newsportal.Manager) *ServerService {
-	return &ServerService{m: m}
+func NewNewsService(m *newsportal.Manager) *NewsService {
+	return &NewsService{m: m}
 }
 
 // NewsByID получение новости по id
-func (ss *ServerService) NewsByID(c echo.Context) error {
+func (ss *NewsService) NewsByID(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid ID")
@@ -41,41 +42,31 @@ func (ss *ServerService) NewsByID(c echo.Context) error {
 }
 
 // NewsWithFilters получение новости с фильтрами
-func (ss *ServerService) NewsWithFilters(c echo.Context) error {
+func (ss *NewsService) NewsWithFilters(c echo.Context) error {
 	var params FilterParams
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, "invalid query parameters")
 	}
-	news, _, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, false)
+	newsResponse, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, params.Count)
+
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	var newNewsList []NewsSummary
-	for _, summary := range news {
+	for _, summary := range newsResponse.News {
 		newNews := NewsSummaryFromManager(&summary)
 		newNewsList = append(newNewsList, *newNews)
 	}
 
-	return c.JSON(http.StatusOK, newNewsList)
-}
-
-// NewsCountWithFilters получение количества новостей с фильтрами
-func (ss *ServerService) NewsCountWithFilters(c echo.Context) error {
-	var params FilterParams
-	if err := c.Bind(&params); err != nil {
-		return c.JSON(http.StatusBadRequest, "invalid query parameters")
-	}
-	_, count, err := ss.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, ptrb(false), true)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	return c.JSON(http.StatusOK, count)
+	return c.JSON(http.StatusOK, NewsResponse{
+		News:  newNewsList,
+		Count: newsResponse.Count,
+	})
 }
 
 // Categories получение всех категорий
-func (ss *ServerService) Categories(c echo.Context) error {
+func (ss *NewsService) Categories(c echo.Context) error {
 	categories, err := ss.m.Categories()
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)
@@ -85,7 +76,7 @@ func (ss *ServerService) Categories(c echo.Context) error {
 }
 
 // Tags получение всех тегов
-func (ss *ServerService) Tags(c echo.Context) error {
+func (ss *NewsService) Tags(c echo.Context) error {
 	tags, err := ss.m.Tags()
 	if err != nil {
 		return c.JSON(http.StatusNotFound, err)

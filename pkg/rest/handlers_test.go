@@ -1,4 +1,4 @@
-package server
+package rest
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 var dbc *pg.DB
 var nr db.NewsRepo
 var nm *newsportal.Manager
-var ss *ServerService
+var ss *NewsService
 var e *echo.Echo
 
 const trueNews = `{"newsId":11,"title":"Новость1","categoryId":{"categoryId":1,"title":"рр","orderNumber":null,"alias":"к"},"foreword":"Преамбула","content":"Контент","tags":[{"tagId":1,"title":"заголовок1"},{"tagId":2,"title":"заголовок2"}],"author":"Автор","publishedAt":"2024-07-17T18:25:28.010745+03:00"}
@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 
 	nr = db.NewNewsRepo(dbc)
 	nm = newsportal.NewManager(nr)
-	ss = NewServerService(nm)
+	ss = NewNewsService(nm)
 	e = echo.New()
 
 	os.Exit(m.Run())

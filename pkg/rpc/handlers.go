@@ -5,7 +5,7 @@ import (
 	"newsportal/pkg/newsportal"
 )
 
-type RPCService struct {
+type NewsService struct {
 	zenrpc.Service
 	m *newsportal.Manager
 }
@@ -15,58 +15,51 @@ type FilterParams struct {
 	Page       *int
 	PageSize   *int
 	SortTitle  *bool
+	Count      *bool
 }
 
-func ptrb(b bool) *bool { return &b }
-func NewRPCService(m *newsportal.Manager) *RPCService {
-	return &RPCService{
+func NewNewsService(m *newsportal.Manager) *NewsService {
+	return &NewsService{
 		m: m,
 	}
 }
 
 // NewsByID получение новости по id
-func (rs RPCService) NewsByID(id int) (*News, error) {
+func (rs NewsService) NewsByID(id int) (*News, error) {
 	news, err := rs.m.NewsByID(id)
 	return NewsFromManager(news), err
 }
 
 // Categories получение всех категорий
-func (rs RPCService) Categories() ([]Category, error) {
+func (rs NewsService) Categories() ([]Category, error) {
 	categories, err := rs.m.Categories()
 	return CategoriesFromManager(categories), err
 }
 
 // Tags получение всех тегов
-func (rs RPCService) Tags() ([]Tag, error) {
+func (rs NewsService) Tags() ([]Tag, error) {
 	tags, err := rs.m.Tags()
 	return TagsFromManager(tags), err
 }
 
 // NewsWithFilters получение новости с фильтрами
-func (rs RPCService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sortTitle *bool) ([]NewsSummary, error) {
+func (rs NewsService) NewsWithFilters(categoryID, tagID, page, pageSize *int, sortTitle, count *bool) (NewsResponse, error) {
 	var params FilterParams
-	params.Fill(categoryID, tagID, page, pageSize, sortTitle)
-	news, _, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, false)
+	params.Fill(categoryID, tagID, page, pageSize, sortTitle, count)
+	newsResponse, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, params.Count)
 	var newNewsList []NewsSummary
-	for _, summary := range news {
+	for _, summary := range newsResponse.News {
 		newNews := NewsSummaryFromManager(&summary)
 		newNewsList = append(newNewsList, *newNews)
 	}
-	return newNewsList, err
+	return NewsResponse{News: newNewsList, Count: newsResponse.Count}, err
 }
 
-// NewsCountWithFilters получение количества новостей с фильтрами
-func (rs RPCService) NewsCountWithFilters(categoryID, tagID, page, pageSize *int) (int, error) {
-	var params FilterParams
-	params.Fill(categoryID, tagID, page, pageSize, ptrb(false))
-	_, count, err := rs.m.News(params.CategoryID, params.TagID, params.Page, params.PageSize, params.SortTitle, true)
-	return count, err
-}
-
-func (p *FilterParams) Fill(categoryID, tagID, page, pageSize *int, sortTitle *bool) {
+func (p *FilterParams) Fill(categoryID, tagID, page, pageSize *int, sortTitle, count *bool) {
 	p.CategoryID = categoryID
 	p.TagID = tagID
 	p.Page = page
 	p.PageSize = pageSize
 	p.SortTitle = sortTitle
+	p.Count = count
 }

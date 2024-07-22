@@ -13,6 +13,33 @@ const defaultPageSize = 10
 
 func ptri(r int) *int { return &r }
 
+type TagMap map[int]Tag
+
+type NewsResponse struct {
+	News  []News
+	Count *int
+}
+
+func (t *TagMap) Fill(tagIDMap map[int]struct{}, m *Manager) error {
+
+	var uniqueTagIDs []int
+	for tagID := range tagIDMap {
+		uniqueTagIDs = append(uniqueTagIDs, tagID)
+	}
+
+	// возвращаем теги из бд
+	tags, err := m.TagsByIDs(uniqueTagIDs)
+
+	// создаём карту тегов
+	tagMap := TagMap{}
+	for _, tag := range tags {
+		tagMap[tag.ID] = tag
+	}
+
+	t = &tagMap
+	return err
+}
+
 func NewManager(db db.NewsRepo) *Manager {
 	return &Manager{nr: db}
 }
@@ -24,66 +51,55 @@ func (m Manager) NewsByID(id int) (*News, error) {
 	}
 	// собираем все уникальные tagID
 	tagIDMap := make(map[int]struct{})
-
 	for _, tagID := range news.TagIDs {
 		tagIDMap[tagID] = struct{}{}
 	}
-
-	var uniqueTagIDs []int
-	for tagID := range tagIDMap {
-		uniqueTagIDs = append(uniqueTagIDs, tagID)
-	}
-
-	// возвращаем теги из бд
-	tags, err := m.TagsByIDs(uniqueTagIDs)
-
-	// создаём карту тегов
-	tagMap := make(map[int]Tag)
-	for _, tag := range tags {
-		tagMap[tag.ID] = tag
-	}
-
+	// заполняем карту уникальных tagId
+	var tagMap TagMap
+	err = tagMap.Fill(tagIDMap, &m)
 	var newsTags []Tag
-
 	for _, tagID := range news.TagIDs {
 		newsTags = append(newsTags, tagMap[tagID])
 	}
-
 	return NewsFromDb(news, newsTags), err
 }
 
 func (m Manager) TagsByIDs(ids []int) ([]Tag, error) {
-	tags, err := m.nr.TagsByIDs(ids)
-	return TagsFromDb(tags), err
+	if ids != nil {
+		tags, err := m.nr.TagsByIDs(ids)
+		return TagsFromDb(tags), err
+	}
+	return nil, nil
 }
 
-func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool, countRequest bool) ([]News, int, error) {
+func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle, countRequest *bool) (NewsResponse, error) {
 	qb := m.nr.QB
 
 	if categoryID != nil {
-		qb.AddFilter(`t."categoryId"`, *categoryID)
+		qb.AddFilterEqual(db.Columns.News.CategoryID, *categoryID)
 	}
 	if tagID != nil {
-		qb.AddNewFilter(`ANY (t."tagIds")`, *tagID)
+		qb.AddFilterAny(db.Columns.News.TagIDs, *tagID)
 	}
 	if sortTitle != nil && *sortTitle {
-		qb.AddSort(`t.title`, true)
+		qb.AddSort(db.Columns.News.Title, true)
 	}
 	if page == nil {
 		page = ptri(defaultPage)
 	} else if *page <= 0 {
 		page = ptri(defaultPage)
 	}
-
 	if pageSize == nil {
 		pageSize = ptri(defaultPageSize)
 	} else if *pageSize <= 0 {
 		pageSize = ptri(defaultPageSize)
 	}
-	// если нужо только количество новостей
-	if countRequest {
+	if sortTitle != nil && *sortTitle {
+		qb.AddSort(db.Columns.News.Title, true)
+	}
+	if countRequest != nil && *countRequest {
 		count, err := m.Count(*page, *pageSize, &qb)
-		return nil, count, err
+		return NewsResponse{News: nil, Count: &count}, err
 	}
 	news, err := m.ByPage(*page, *pageSize, &qb)
 	if news != nil {
@@ -94,19 +110,9 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool, c
 				tagIDMap[tagId] = struct{}{}
 			}
 		}
-
-		var uniqueTagIDs []int
-		for tagId := range tagIDMap {
-			uniqueTagIDs = append(uniqueTagIDs, tagId)
-		}
-		// возвращаем теги из бд
-		tags, err := m.TagsByIDs(uniqueTagIDs)
-		// создаём карту тегов
-		tagMap := make(map[int]Tag)
-		for _, tag := range tags {
-			tagMap[tag.ID] = tag
-		}
-
+		// заполняем карту уникальных tagId
+		var tagMap TagMap
+		err = tagMap.Fill(tagIDMap, &m)
 		var newNewsList []News
 		for i, summary := range news {
 			var newsTags []Tag
@@ -116,10 +122,9 @@ func (m Manager) News(categoryID, tagID, page, pageSize *int, sortTitle *bool, c
 			newNews := NewsFromDb(&news[i], newsTags)
 			newNewsList = append(newNewsList, *newNews)
 		}
-		return newNewsList, 0, err
+		return NewsResponse{News: newNewsList, Count: nil}, err
 	}
-
-	return nil, 0, err
+	return NewsResponse{News: nil, Count: nil}, err
 }
 
 // ByPage возвращает все новости с определённой страницы

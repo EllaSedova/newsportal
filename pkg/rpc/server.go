@@ -31,7 +31,7 @@ func New(m *newsportal.Manager) zenrpc.Server {
 
 	// services
 	rpc.RegisterAll(map[string]zenrpc.Invoker{
-		NsRPC: NewRPCService(m),
+		NsRPC: NewNewsService(m),
 	})
 
 	return rpc

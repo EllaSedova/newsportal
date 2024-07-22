@@ -95,8 +95,8 @@ func TestNewsWithPagination(t *testing.T) {
 	categoryID := 3
 	tagID := 1
 	sortTitle := false
-	qb.AddFilter(`t."categoryId"`, categoryID)
-	qb.AddNewFilter(`ANY (t."tagIds")`, tagID)
+	qb.AddFilterEqual(`t."categoryId"`, categoryID)
+	qb.AddFilterAny(`ANY (t."tagIds")`, tagID)
 	qb.AddSort("t.title", sortTitle)
 
 	// get news by tag
@@ -143,7 +143,7 @@ func TestNewsRepo_NewsWithPagination(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//tt.args.qb.AddFilter(`"categoryID"`, 3)
+			//tt.args.qb.AddFilterEqual(`"categoryID"`, 3)
 			got, err := nr.NewsWithPagination(tt.args.page, tt.args.pageSize, tt.args.qb)
 			if !tt.wantErr(t, err, fmt.Sprintf("NewsWithPagination(%v, %v, %v)", tt.args.page, tt.args.pageSize, tt.args.qb)) {
 				return
