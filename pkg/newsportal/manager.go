@@ -2,7 +2,6 @@ package newsportal
 
 import (
 	"context"
-	"log"
 	"newsportal/pkg/db"
 )
 
@@ -76,11 +75,11 @@ func (m Manager) NewsByID(ctx context.Context, id int) (*News, error) {
 	} else if news == nil {
 		return nil, nil
 	}
-	log.Println(news)
+
 	n := NewNewsListFromDB([]db.News{*news})
-	log.Println(n)
+
 	err = m.FillTags(ctx, n)
-	log.Println(&n[0])
+
 	return &n[0], err
 }
 

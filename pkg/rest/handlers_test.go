@@ -118,6 +118,53 @@ func TestNewsWithFilters(t *testing.T) {
 	}
 }
 
+func TestNewsCountWithFilters(t *testing.T) {
+	type args struct {
+		c echo.Context
+	}
+	// описываем тестовые случаи
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+		want    string
+	}{
+		{
+			name: "valid filters",
+			args: args{
+				c: validEchoContext(),
+			},
+			want: `3
+`,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid filters",
+			args: args{
+				c: invalidEchoContext(),
+			},
+			want: `0
+`,
+			wantErr: assert.NoError,
+		},
+	}
+	// тестируем
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			tt.args.c.Response().Writer = rec
+
+			err := ss.NewsCountWithFilters(tt.args.c)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewsCountWithFilters(%v)", tt.args.c)) {
+				return
+			}
+			// вывод результата
+			got := rec.Body.String()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 // создание echo.Context с валидными фильтрами
 func validEchoContext() echo.Context {
 	req := httptest.NewRequest(http.MethodGet, "/news", nil)
@@ -126,7 +173,7 @@ func validEchoContext() echo.Context {
 	// добавление параметров в запрос
 	q := req.URL.Query()
 	q.Add("categoryID", "1")
-	q.Add("tagID", "3")
+	q.Add("tagID", "1")
 	req.URL.RawQuery = q.Encode()
 
 	return c

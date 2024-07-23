@@ -2,6 +2,7 @@ package newsportal
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -16,7 +17,10 @@ func ptrs(r string) *string { return &r }
 var dbc *pg.DB
 var nr db.NewsRepo
 var nm *Manager
-var realNews News
+var realNews15 News
+var realNews16 News
+var realNews17 News
+var wrongNews News
 
 func TestMain(m *testing.M) {
 	opts := &pg.Options{
@@ -35,7 +39,7 @@ func TestMain(m *testing.M) {
 	nr = db.NewNewsRepo(dbc)
 	nm = NewManager(nr)
 
-	realNews = News{
+	realNews15 = News{
 		News: &db.News{ID: 15,
 			Title:       "AНовость5",
 			CategoryID:  1,
@@ -44,7 +48,15 @@ func TestMain(m *testing.M) {
 			TagIDs:      []int{1, 2, 3},
 			Author:      "Автор",
 			PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
-			StatusID:    1},
+			StatusID:    1,
+			Category: &db.Category{
+				ID:          1,
+				Title:       "рр",
+				OrderNumber: nil,
+				Alias:       "к",
+				StatusID:    1,
+			},
+		},
 		Category: &Category{
 			ID:          1,
 			Title:       "рр",
@@ -70,21 +82,125 @@ func TestMain(m *testing.M) {
 			},
 		},
 	}
+
+	realNews16 = News{
+		News: &db.News{ID: 16,
+			Title:       "Новость10",
+			CategoryID:  1,
+			Foreword:    "Преамбула",
+			Content:     ptrs("Контент"),
+			TagIDs:      []int{1, 2},
+			Author:      "Автор",
+			PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
+			StatusID:    1,
+			Category: &db.Category{
+				ID:          1,
+				Title:       "рр",
+				OrderNumber: nil,
+				Alias:       "к",
+				StatusID:    1,
+			},
+		},
+		Category: &Category{
+			ID:          1,
+			Title:       "рр",
+			OrderNumber: nil,
+			Alias:       "к",
+			StatusID:    1,
+		},
+		Tags: []Tag{
+			{
+				ID:       1,
+				Title:    "заголовок1",
+				StatusID: 1,
+			},
+			{
+				ID:       2,
+				Title:    "заголовок2",
+				StatusID: 1,
+			},
+		},
+	}
+	realNews17 = News{
+		News: &db.News{ID: 17,
+			Title:       "BНовость17",
+			CategoryID:  1,
+			Foreword:    "Преамбула",
+			Content:     ptrs("Контент"),
+			TagIDs:      []int{1, 2},
+			Author:      "Автор",
+			PublishedAt: time.Date(2024, time.July, 17, 18, 25, 28, 10745000, time.Local),
+			StatusID:    1,
+			Category: &db.Category{
+				ID:          1,
+				Title:       "рр",
+				OrderNumber: nil,
+				Alias:       "к",
+				StatusID:    1,
+			},
+		},
+		Category: &Category{
+			ID:          1,
+			Title:       "рр",
+			OrderNumber: nil,
+			Alias:       "к",
+			StatusID:    1,
+		},
+		Tags: []Tag{
+			{
+				ID:       1,
+				Title:    "заголовок1",
+				StatusID: 1,
+			},
+			{
+				ID:       2,
+				Title:    "заголовок2",
+				StatusID: 1,
+			},
+		},
+	}
 	os.Exit(m.Run())
 }
-
-func TestGetNewsByID(t *testing.T) {
-	// get wrong news by id
-	wrongNews, err := nm.NewsByID(context.Background(), 6)
-	assert.Nil(t, wrongNews)
-
-	// get true news by id
-	actualNews, err := nm.NewsByID(context.Background(), 15)
-	assert.NoError(t, err)
-	assert.Equal(t, realNews.Category, actualNews.Category)
-	assert.Equal(t, realNews.Tags, actualNews.Tags)
-	assert.Equal(t, realNews.PublishedAt, actualNews.PublishedAt)
-
+func TestNewsByID(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		ID  int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    News
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{name: "valid args",
+			args: args{
+				ctx: context.Background(),
+				ID:  15,
+			},
+			want:    realNews15,
+			wantErr: assert.NoError,
+		},
+		{name: "invalid args",
+			args: args{
+				ctx: context.Background(),
+				ID:  -15,
+			},
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nm.NewsByID(tt.args.ctx, tt.args.ID)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewsByID(%v, %v)", tt.args.ctx, tt.args.ID)) {
+				return
+			}
+			if tt.name == "invalid args" {
+				assert.Nil(t, got)
+			} else {
+				assert.Equalf(t, &tt.want, got, "NewsByID(%v, %v)", tt.args.ctx, tt.args.ID)
+			}
+		})
+	}
 }
 
 func TestFillTags(t *testing.T) {
@@ -122,36 +238,164 @@ func TestFillTags(t *testing.T) {
 }
 
 func TestNews(t *testing.T) {
-	categoryID := 1
-	tagID := 3
-	page := 1
-	pageSize := 10
+	type args struct {
+		ctx        context.Context
+		categoryID *int
+		tagID      *int
+		page       *int
+		pageSize   *int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []News
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "valid args",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(1),
+				tagID:      ptri(3),
+				page:       nil,
+				pageSize:   nil,
+			},
+			want:    []News{realNews15},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "valid args return list",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(1),
+				tagID:      ptri(1),
+				page:       nil,
+				pageSize:   nil,
+			},
+			want:    []News{realNews17, realNews16},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "valid args return list with pagination",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(1),
+				tagID:      ptri(1),
+				page:       nil,
+				pageSize:   ptri(10),
+			},
+			want:    []News{realNews17, realNews16, realNews15},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid args.categoryID",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(111),
+				tagID:      ptri(3),
+				page:       nil,
+				pageSize:   nil,
+			},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nm.News(tt.args.ctx, tt.args.categoryID, tt.args.tagID, tt.args.page, tt.args.pageSize)
+			if !tt.wantErr(t, err, fmt.Sprintf("News(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.categoryID, tt.args.tagID, tt.args.page, tt.args.pageSize)) {
+				return
+			}
+			for i := range got {
+				assert.Equal(t, tt.want[i].Tags, got[i].Tags)
+				assert.Equal(t, tt.want[i].Category, got[i].Category)
+			}
+			assert.Equalf(t, tt.want, got, "News(%v, %v, %v, %v, %v)", tt.args.ctx, tt.args.categoryID, tt.args.tagID, tt.args.page, tt.args.pageSize)
+		})
+	}
+}
 
-	newNewsList, err := nm.News(context.Background(), &categoryID, &tagID, &page, &pageSize)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.NotNil(t, newNewsList)
-	assert.Len(t, newNewsList, 1)
-	assert.Equal(t, realNews.Tags, newNewsList[0].Tags)
-	assert.Equal(t, realNews.Category, newNewsList[0].Category)
-	assert.Equal(t, realNews.PublishedAt, newNewsList[0].PublishedAt)
-	assert.Equal(t, realNews.ID, newNewsList[0].ID)
-
-	wrongCategoryID := 17
-	var emptyTagID int
-	newNewsList2, err := nm.News(context.Background(), &wrongCategoryID, &emptyTagID, &page, &pageSize)
-	assert.NoError(t, err)
-	assert.Nil(t, newNewsList2)
+func TestNewsCount(t *testing.T) {
+	type args struct {
+		ctx        context.Context
+		categoryID *int
+		tagID      *int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *int
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "valid args",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(1),
+				tagID:      ptri(1),
+			},
+			want:    ptri(3),
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid args",
+			args: args{
+				ctx:        context.Background(),
+				categoryID: ptri(1),
+				tagID:      ptri(133),
+			},
+			want:    ptri(0),
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nm.NewsCount(tt.args.ctx, tt.args.categoryID, tt.args.tagID)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewsCount(%v, %v, %v)", tt.args.ctx, tt.args.categoryID, tt.args.tagID)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "NewsCount(%v, %v, %v)", tt.args.ctx, tt.args.categoryID, tt.args.tagID)
+		})
+	}
 }
 
 func TestTagsByIDs(t *testing.T) {
-	ids := []int{1, 2}
-	tags, err := nm.TagsByIDs(context.Background(), ids)
-	assert.NoError(t, err)
-	// Проверка результатов
-	trueTags := []Tag{{ID: 1, Title: "заголовок1", StatusID: 1}, {ID: 2, Title: "заголовок2", StatusID: 1}}
-
-	assert.Equal(t, trueTags, tags)
-
+	type args struct {
+		ctx    context.Context
+		tagIDs []int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []Tag
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "valid args",
+			args: args{
+				ctx:    context.Background(),
+				tagIDs: []int{1, 2},
+			},
+			want:    []Tag{{ID: 1, Title: "заголовок1", StatusID: 1}, {ID: 2, Title: "заголовок2", StatusID: 1}},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid args",
+			args: args{
+				ctx:    context.Background(),
+				tagIDs: []int{1, 13},
+			},
+			want:    []Tag{{ID: 1, Title: "заголовок1", StatusID: 1}},
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nm.TagsByIDs(tt.args.ctx, tt.args.tagIDs)
+			if !tt.wantErr(t, err, fmt.Sprintf("TagsByIDs(%v, %v)", tt.args.ctx, tt.args.tagIDs)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "TagsByIDs(%v, %v)", tt.args.ctx, tt.args.tagIDs)
+		})
+	}
 }
