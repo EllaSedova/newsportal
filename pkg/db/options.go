@@ -13,22 +13,13 @@ import (
 )
 
 const (
-	ProdType = "detail"
-	// common statuses
-	StatusEnabled          = 1
-	StatusBusy             = 2
-	StatusDeleted          = 3
-	StatusWaitRegistration = 4
-	StatusNewRegistration  = 5
-	StatusMustBeDeleted    = 6 // таска завершилась ошибкой
-	StatusPause            = 7
+	StatusEnabled  = 1
+	StatusDisabled = 2
+	StatusDeleted  = 3
 )
 
 var (
-	StatusFilter            = Filter{Field: "statusId", Value: []int{StatusEnabled}, SearchType: SearchTypeArray}
-	StatusEnabledFilter     = Filter{Field: "statusId", Value: []int{StatusEnabled}, SearchType: SearchTypeArray}
-	AllStatusFilter         = Filter{Field: "statusId", Value: []int{StatusEnabled, StatusBusy, StatusWaitRegistration, StatusNewRegistration, StatusMustBeDeleted}, SearchType: SearchTypeArray}
-	TaskManagerStatusFilter = Filter{Field: "statusId", Value: []int{StatusEnabled, StatusBusy, StatusWaitRegistration, StatusNewRegistration, StatusMustBeDeleted, StatusDeleted, StatusPause}, SearchType: SearchTypeArray}
+	StatusFilter = Filter{Field: "statusId", Value: []int{StatusEnabled}, SearchType: SearchTypeArray}
 )
 
 type SortDirection string
